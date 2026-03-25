@@ -146,9 +146,11 @@ else()
     list(APPEND AGENT_SOURCES src/util/metrics_noop.cpp)
 endif()
 
-# gRPC-dependent sources are only compiled when protobuf/gRPC are available
+# gRPC-dependent sources: use real impl when available, no-op fallback otherwise
 if(protobuf_FOUND AND gRPC_FOUND)
     list(APPEND AGENT_SOURCES src/agent/grpc_client.cpp)
+else()
+    list(APPEND AGENT_SOURCES src/agent/grpc_client_noop.cpp)
 endif()
 
 add_library(sentinel_agent_lib STATIC ${AGENT_SOURCES})
