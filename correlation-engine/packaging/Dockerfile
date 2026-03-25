@@ -9,7 +9,7 @@
 # ============================================================================
 #  Build stage
 # ============================================================================
-FROM rust:1.75-bookworm AS builder
+FROM rust:1.82-bookworm AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         protobuf-compiler \
@@ -64,8 +64,9 @@ RUN groupadd -r sentinel && useradd -r -g sentinel -m -d /opt/sentinel sentinel
 COPY --from=builder /build/correlation-engine/target/release/correlation-engine /usr/local/bin/sentinel-correlation-engine
 RUN chmod +x /usr/local/bin/sentinel-correlation-engine
 
-# Copy configuration defaults
-COPY config/ /etc/sentinel/ 2>/dev/null || true
+# Configuration is mounted at runtime via volumes or ConfigMaps.
+# Create the config directory for the mount point.
+RUN mkdir -p /etc/sentinel
 
 RUN mkdir -p /var/lib/sentinel && chown sentinel:sentinel /var/lib/sentinel
 

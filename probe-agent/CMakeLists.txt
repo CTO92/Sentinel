@@ -226,13 +226,11 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
             tests/unit/test_ring_buffer.cpp
         )
         add_executable(sentinel_unit_tests ${UNIT_TESTS})
-        target_link_libraries(sentinel_unit_tests
-            PRIVATE
-                sentinel_agent_lib
-                GTest::gtest
-                GTest::gtest_main
-                GTest::gmock
-        )
+        set(_UNIT_TEST_LIBS sentinel_agent_lib GTest::gtest GTest::gtest_main)
+        if(TARGET GTest::gmock)
+            list(APPEND _UNIT_TEST_LIBS GTest::gmock)
+        endif()
+        target_link_libraries(sentinel_unit_tests PRIVATE ${_UNIT_TEST_LIBS})
         gtest_discover_tests(sentinel_unit_tests)
 
         # CUDA unit tests
