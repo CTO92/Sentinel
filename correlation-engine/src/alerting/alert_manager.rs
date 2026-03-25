@@ -5,14 +5,13 @@
 //! enforcing rate limits and deduplication rules.
 
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 use crate::alerting::pagerduty::PagerDutyClient;
 use crate::alerting::slack::SlackClient;
@@ -117,7 +116,7 @@ pub struct AlertManager {
 
 impl AlertManager {
     /// Create a new alert manager and return a handle for submitting alerts.
-    pub fn new(config: AlertingConfig) -> (AlertHandle, mpsc::Receiver<Alert>) {
+    pub fn new(_config: AlertingConfig) -> (AlertHandle, mpsc::Receiver<Alert>) {
         let (tx, rx) = mpsc::channel(1_000);
         (AlertHandle { sender: tx }, rx)
     }

@@ -9,7 +9,6 @@ corrupted results.
 from __future__ import annotations
 
 import hashlib
-import struct
 import time
 from typing import Any
 

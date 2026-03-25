@@ -5,7 +5,7 @@
 
 use once_cell::sync::Lazy;
 use prometheus::{
-    self, CounterVec, Encoder, GaugeVec, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec,
+    self, Encoder, GaugeVec, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec,
     Opts, Registry, TextEncoder,
 };
 

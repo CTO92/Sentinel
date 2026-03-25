@@ -1,5 +1,3 @@
-version: "3.9"
-
 x-common-env: &common-env
   SENTINEL_LOG_LEVEL: info
   SENTINEL_LOG_FORMAT: json
@@ -12,8 +10,8 @@ services:
   correlation-engine:
     image: sentinel/correlation-engine:latest
     build:
-      context: ..
-      dockerfile: docker/Dockerfile.correlation-engine
+      context: ../correlation-engine
+      dockerfile: packaging/Dockerfile
     container_name: sentinel-correlation-engine
     restart: unless-stopped
     environment:
@@ -56,8 +54,8 @@ services:
   audit-ledger:
     image: sentinel/audit-ledger:latest
     build:
-      context: ..
-      dockerfile: docker/Dockerfile.audit-ledger
+      context: ../audit-ledger
+      dockerfile: packaging/Dockerfile
     container_name: sentinel-audit-ledger
     restart: unless-stopped
     environment:

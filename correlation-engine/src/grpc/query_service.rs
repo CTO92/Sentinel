@@ -8,8 +8,6 @@
 use std::sync::Arc;
 
 use tokio::sync::RwLock;
-use tracing::{debug, error};
-
 use crate::correlation::engine::EngineHandle;
 use crate::health::quarantine::QuarantineManager;
 

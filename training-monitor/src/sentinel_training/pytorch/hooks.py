@@ -184,7 +184,11 @@ class SentinelTrainingHook:
         ) -> None:
             for i, g in enumerate(grad_output):
                 if g is not None and isinstance(g, torch.Tensor):
-                    layer_name = f"{module_name}.grad_output.{i}" if module_name else f"grad_output.{i}"
+                    layer_name = (
+                        f"{module_name}.grad_output.{i}"
+                        if module_name
+                        else f"grad_output.{i}"
+                    )
                     gradient_monitor.on_gradient(layer_name, g)
 
         return hook

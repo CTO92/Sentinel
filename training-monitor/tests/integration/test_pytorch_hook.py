@@ -30,7 +30,9 @@ class TestPyTorchHookIntegration:
         """Create a test configuration."""
         return SentinelConfig(
             gradient_norm={"warmup_steps": 5, "sigma_multiplier": 4.0},  # type: ignore[arg-type]
-            loss_tracking={"warmup_steps": 5, "sigma_multiplier": 3.0, "plateau_window": 10},  # type: ignore[arg-type]
+            loss_tracking={  # type: ignore[arg-type]
+                "warmup_steps": 5, "sigma_multiplier": 3.0, "plateau_window": 10,
+            },
             checkpoint_validation={"enabled": True},  # type: ignore[arg-type]
             cross_rank_divergence={"enabled": False},  # type: ignore[arg-type]
             metrics={"enabled": False},  # type: ignore[arg-type]

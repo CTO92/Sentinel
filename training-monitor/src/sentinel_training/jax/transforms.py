@@ -203,7 +203,9 @@ def sentinel_monitor(
     """
     if fn is None:
         # Called with arguments: @sentinel_monitor(config=..., name=...)
-        return functools.partial(sentinel_monitor, config=config, name=name)  # type: ignore[return-value]
+        return functools.partial(  # type: ignore[return-value]
+            sentinel_monitor, config=config, name=name,
+        )
 
     if jax is None:
         logger.warning("jax_not_available", message="sentinel_monitor is a no-op")

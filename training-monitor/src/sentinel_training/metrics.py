@@ -6,8 +6,6 @@ anomaly rates, gradient norms, and loss values.
 
 from __future__ import annotations
 
-from typing import Any
-
 import structlog
 from prometheus_client import Counter, Gauge, Histogram, Summary
 

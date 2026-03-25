@@ -10,7 +10,6 @@ import atexit
 import threading
 import time
 from collections import deque
-from typing import Any
 
 import grpc
 import structlog

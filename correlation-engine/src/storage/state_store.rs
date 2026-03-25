@@ -12,8 +12,8 @@
 use std::collections::HashMap;
 
 use anyhow::{Context, Result};
-use serde::{de::DeserializeOwned, Serialize};
-use tracing::{debug, error, info, warn};
+use serde::de::DeserializeOwned;
+use tracing::{debug, info, warn};
 
 use crate::correlation::bayesian_attribution::BayesianBelief;
 use crate::health::quarantine::GpuStateRecord;

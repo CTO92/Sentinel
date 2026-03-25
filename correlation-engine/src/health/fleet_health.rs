@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn test_worst_gpus() {
-        let mut r1 = make_record("gpu-1", "H100", QuarantineState::Healthy);
+        let r1 = make_record("gpu-1", "H100", QuarantineState::Healthy);
         let mut r2 = make_record("gpu-2", "H100", QuarantineState::Healthy);
         // Make gpu-2 worse by increasing its beta.
         r2.belief = BayesianBelief::new(1000.0, 10.0);

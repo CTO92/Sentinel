@@ -16,7 +16,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use chrono::Utc;
 use tokio::sync::{mpsc, RwLock};
 use tracing::{debug, error, info, warn};
 
@@ -207,11 +206,11 @@ impl CorrelationEngine {
     /// Create a new correlation engine and return a handle for sending commands
     /// and a receiver for quarantine actions.
     pub fn new(
-        config: Arc<AppConfig>,
-        quarantine_manager: Arc<RwLock<QuarantineManager>>,
+        _config: Arc<AppConfig>,
+        _quarantine_manager: Arc<RwLock<QuarantineManager>>,
     ) -> (EngineHandle, QuarantineActionReceiver, mpsc::Receiver<EngineCommand>) {
         let (cmd_tx, cmd_rx) = mpsc::channel(10_000);
-        let (q_tx, q_rx) = mpsc::channel(1_000);
+        let (_q_tx, q_rx) = mpsc::channel(1_000);
 
         let handle = EngineHandle { sender: cmd_tx };
 
@@ -347,8 +346,12 @@ impl CorrelationEngine {
         }
 
         // Step 5: Run pattern matcher on current window.
-        let gpu_events = self.temporal_window.events_for_gpu(&gpu_uuid);
-        let patterns = self.pattern_matcher.match_patterns(&gpu_uuid, &gpu_events);
+        // Collect events and run pattern matching in a block so the immutable
+        // borrow on self.temporal_window is released before mutable access.
+        let patterns = {
+            let gpu_events = self.temporal_window.events_for_gpu(&gpu_uuid);
+            self.pattern_matcher.match_patterns(&gpu_uuid, &gpu_events)
+        };
 
         if !patterns.is_empty() {
             for p in &patterns {
@@ -540,6 +543,7 @@ impl CorrelationEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Utc;
     use crate::health::quarantine::QuarantineManager;
 
     fn test_config() -> Arc<AppConfig> {

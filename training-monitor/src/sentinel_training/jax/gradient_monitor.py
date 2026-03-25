@@ -6,7 +6,6 @@ but operates on JAX pytrees and sharded arrays.
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 import numpy as np

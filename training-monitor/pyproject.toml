@@ -36,6 +36,7 @@ jax = ["jax>=0.4.24", "jaxlib>=0.4.24"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
+    "pytest-cov>=4.0",
     "mypy>=1.8",
     "ruff>=0.2",
 ]

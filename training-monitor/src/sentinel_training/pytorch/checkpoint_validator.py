@@ -8,10 +8,9 @@ fingerprint between checkpoints indicate possible silent data corruption.
 from __future__ import annotations
 
 import hashlib
-import io
 import time
 from dataclasses import dataclass
-from typing import Any, Iterator
+from typing import Any
 
 import numpy as np
 import structlog
