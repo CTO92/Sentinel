@@ -1,0 +1,71 @@
+# =============================================================================
+# SENTINEL Probe Schedule - Aggressive
+# =============================================================================
+# High-sensitivity schedule running all probes at 2x the default rate.
+# Use when a GPU is in SUSPECT state or during post-incident investigation.
+# Expected overhead: 3-5% GPU time.
+
+schedule:
+  - type: FMA
+    period_seconds: 30
+    sm_coverage: 1.0
+    priority: 1
+    enabled: true
+    timeout_ms: 500
+    description: >
+      FMA check at 2x rate. Every SM tested every 30 seconds for rapid
+      detection of intermittent FMA faults.
+
+  - type: TENSOR_CORE
+    period_seconds: 30
+    sm_coverage: 1.0
+    priority: 1
+    enabled: true
+    timeout_ms: 1000
+    description: >
+      Tensor Core check at 2x rate. Every SM tested every 30 seconds.
+
+  - type: TRANSCENDENTAL
+    period_seconds: 60
+    sm_coverage: 1.0
+    priority: 1
+    enabled: true
+    timeout_ms: 500
+    description: >
+      Transcendental check at 2x rate with full SM coverage every period.
+
+  - type: AES
+    period_seconds: 150
+    sm_coverage: 0.5
+    priority: 2
+    enabled: true
+    timeout_ms: 2000
+    description: >
+      AES check at 2x rate with doubled SM coverage for faster full rotation.
+
+  - type: MEMORY
+    period_seconds: 300
+    sm_coverage: 1.0
+    priority: 3
+    enabled: true
+    timeout_ms: 5000
+    description: >
+      Memory check at 2x rate. Full memory test every 300 seconds.
+
+  - type: REGISTER_FILE
+    period_seconds: 60
+    sm_coverage: 1.0
+    priority: 1
+    enabled: true
+    timeout_ms: 500
+    description: >
+      Register file check at 2x rate. Every SM tested every 60 seconds.
+
+  - type: SHARED_MEMORY
+    period_seconds: 150
+    sm_coverage: 1.0
+    priority: 2
+    enabled: true
+    timeout_ms: 1000
+    description: >
+      Shared memory check at 2x rate with full SM coverage.

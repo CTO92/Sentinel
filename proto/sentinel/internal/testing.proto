@@ -1,0 +1,143 @@
+syntax = "proto3";
+package sentinel.internal;
+
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.internal";
+
+// Types of faults that can be injected for testing.
+enum FaultInjectionType {
+  FAULT_INJECTION_TYPE_UNSPECIFIED = 0;
+
+  // Flip a specific bit in the target location.
+  FAULT_INJECTION_TYPE_BIT_FLIP = 1;
+
+  // Force a bit to a fixed value (stuck-at-0 or stuck-at-1).
+  FAULT_INJECTION_TYPE_STUCK_AT = 2;
+
+  // Introduce artificial latency in GPU operations.
+  FAULT_INJECTION_TYPE_DELAY = 3;
+
+  // Add Gaussian noise to computation results.
+  FAULT_INJECTION_TYPE_NOISE = 4;
+}
+
+// Stuck-at value for STUCK_AT fault type.
+enum StuckAtValue {
+  STUCK_AT_VALUE_UNSPECIFIED = 0;
+  STUCK_AT_VALUE_ZERO = 1;
+  STUCK_AT_VALUE_ONE = 2;
+}
+
+// Request to inject a fault into a GPU for testing purposes.
+message FaultInjectionRequest {
+  // Type of fault to inject.
+  FaultInjectionType type = 1;
+
+  // Target GPU for injection.
+  sentinel.v1.GpuIdentifier target_gpu = 2;
+
+  // Target SM (optional; if absent, fault is GPU-wide).
+  sentinel.v1.SmIdentifier target_sm = 3;
+
+  // Specific target within the GPU.
+  oneof target {
+    // Index into the model weight tensor to corrupt.
+    uint64 weight_index = 10;
+
+    // Register file index to corrupt.
+    uint32 register_index = 11;
+
+    // Global memory address to corrupt.
+    uint64 memory_address = 12;
+
+    // Shared memory offset to corrupt.
+    uint32 shared_memory_offset = 13;
+  }
+
+  // Bit position to flip or stick (0 = LSB).
+  uint32 bit_position = 4;
+
+  // Duration in milliseconds for transient faults (0 = permanent until cleared).
+  uint32 duration_ms = 5;
+
+  // For STUCK_AT type: the value to stick to.
+  StuckAtValue stuck_at_value = 6;
+
+  // For NOISE type: standard deviation of the Gaussian noise.
+  double noise_stddev = 7;
+
+  // For DELAY type: delay to introduce in microseconds.
+  uint32 delay_us = 8;
+
+  // Human-readable description of why this fault is being injected.
+  string description = 9;
+}
+
+// Response to a fault injection request.
+message FaultInjectionResponse {
+  // Whether the fault was successfully injected.
+  bool success = 1;
+
+  // Unique identifier for this injection (used to clear it later).
+  string injection_id = 2;
+
+  // Error message if injection failed.
+  string error = 3;
+
+  // Timestamp when the fault was activated.
+  string activated_at = 4;
+
+  // Timestamp when the fault will auto-expire (if duration_ms > 0).
+  string expires_at = 5;
+}
+
+// Request to clear a previously injected fault.
+message ClearFaultRequest {
+  // The injection ID returned by FaultInjectionResponse.
+  string injection_id = 1;
+}
+
+// Response to a clear fault request.
+message ClearFaultResponse {
+  // Whether the fault was successfully cleared.
+  bool success = 1;
+
+  // Error message if clearing failed.
+  string error = 2;
+}
+
+// Request to list all active fault injections.
+message ListFaultsRequest {
+  // Optional: filter by GPU.
+  sentinel.v1.GpuIdentifier gpu_filter = 1;
+}
+
+// Response listing active fault injections.
+message ListFaultsResponse {
+  repeated ActiveFault faults = 1;
+}
+
+// An active fault injection.
+message ActiveFault {
+  string injection_id = 1;
+  FaultInjectionType type = 2;
+  sentinel.v1.GpuIdentifier target_gpu = 3;
+  string description = 4;
+  string activated_at = 5;
+  string expires_at = 6;
+}
+
+// Service for fault injection during testing.
+// WARNING: This service must NEVER be enabled in production deployments.
+service TestingService {
+  // Inject a fault into a GPU.
+  rpc InjectFault(FaultInjectionRequest) returns (FaultInjectionResponse);
+
+  // Clear a previously injected fault.
+  rpc ClearFault(ClearFaultRequest) returns (ClearFaultResponse);
+
+  // List all active fault injections.
+  rpc ListFaults(ListFaultsRequest) returns (ListFaultsResponse);
+}

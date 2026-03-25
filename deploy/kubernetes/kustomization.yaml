@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sentinel
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: sentinel-sdc
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false
+
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - network-policies.yaml
+
+commonAnnotations:
+  sentinel.io/version: "0.1.0"
+  sentinel.io/repository: "https://github.com/sentinel-sdc/sentinel"

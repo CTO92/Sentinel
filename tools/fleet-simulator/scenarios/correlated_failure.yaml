@@ -1,0 +1,37 @@
+# SENTINEL Fleet Simulator — Correlated Failure Scenario
+#
+# 500 GPUs across 63 nodes. Three GPUs (indices 16, 17, 18) on the same
+# node share a power rail and fail together starting at t=1h.
+# Tests SENTINEL's correlation engine for multi-GPU failure detection.
+
+simulation:
+  fleet_size: 500
+  duration_seconds: 14400       # 4 hours
+  telemetry_interval_s: 10
+  probe_interval_s: 30
+  sdc_rate: 0.0                 # Healthy baseline
+  gpus_per_node: 8              # 63 nodes
+  seed: 456
+
+  degrading_gpus: []            # Individual degradation handled by correlated_groups
+
+  correlated_groups:
+    - name: "power_rail_failure_node_002"
+      description: "Three GPUs on node-0002 sharing a power rail fail simultaneously"
+      gpu_indices: [16, 17, 18]
+      failure_start_s: 3600     # Begin failing at 1 hour
+      failure_duration_s: 1800  # Rapid degradation over 30 minutes
+      sdc_rate: 0.05            # 5% SDC rate — aggressive failure
+
+# Expected outcomes:
+#   - GPUs 16, 17, 18 begin failing simultaneously at t=1h
+#   - All three are on node-0002 (indices 16-23 map to node-0002)
+#   - SENTINEL correlation engine detects the correlated pattern
+#   - Temporal correlation: failures start within the same probe window
+#   - Spatial correlation: all GPUs on the same node
+#   - Alert severity escalates from warning to critical as SDC rate climbs
+#   - No false positives on the other 497 GPUs
+#   - Total simulation generates approximately:
+#       - 500 * (14400/10) = 720,000 telemetry events
+#       - 500 * (14400/30) = 240,000 probe events
+#       - ~3 * (10800/30) * 0.05 = ~54 anomaly events from the faulty GPUs

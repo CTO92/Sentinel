@@ -1,0 +1,73 @@
+# =============================================================================
+# SENTINEL Probe Schedule - Low Overhead
+# =============================================================================
+# Minimal overhead schedule running all probes at 0.25x the default rate.
+# Use during peak production workloads where GPU utilization is critical.
+# Expected overhead: <0.5% GPU time.
+
+schedule:
+  - type: FMA
+    period_seconds: 240
+    sm_coverage: 0.25
+    priority: 1
+    enabled: true
+    timeout_ms: 500
+    description: >
+      FMA check at 0.25x rate. Only 25% of SMs tested per period, giving
+      a full rotation every 960 seconds. Minimum viable SDC detection.
+
+  - type: TENSOR_CORE
+    period_seconds: 240
+    sm_coverage: 0.25
+    priority: 1
+    enabled: true
+    timeout_ms: 1000
+    description: >
+      Tensor Core check at 0.25x rate. 25% SM coverage per period.
+
+  - type: TRANSCENDENTAL
+    period_seconds: 480
+    sm_coverage: 0.25
+    priority: 3
+    enabled: true
+    timeout_ms: 500
+    description: >
+      Transcendental check at 0.25x rate with reduced SM coverage.
+
+  - type: AES
+    period_seconds: 1200
+    sm_coverage: 0.125
+    priority: 4
+    enabled: true
+    timeout_ms: 2000
+    description: >
+      AES check at 0.25x rate with minimal SM coverage. Full rotation
+      takes approximately 2.7 hours.
+
+  - type: MEMORY
+    period_seconds: 2400
+    sm_coverage: 0.5
+    priority: 5
+    enabled: true
+    timeout_ms: 5000
+    description: >
+      Memory check at 0.25x rate. Reduced coverage trades detection
+      latency for minimal performance impact.
+
+  - type: REGISTER_FILE
+    period_seconds: 480
+    sm_coverage: 0.25
+    priority: 3
+    enabled: true
+    timeout_ms: 500
+    description: >
+      Register file check at 0.25x rate with reduced SM coverage.
+
+  - type: SHARED_MEMORY
+    period_seconds: 1200
+    sm_coverage: 0.25
+    priority: 4
+    enabled: true
+    timeout_ms: 1000
+    description: >
+      Shared memory check at 0.25x rate with reduced SM coverage.

@@ -1,0 +1,29 @@
+# SENTINEL Fleet Simulator — Healthy Fleet Scenario
+#
+# 1000 GPUs, all healthy, normal telemetry variation.
+# Use this as a baseline to verify that SENTINEL produces zero false positives
+# under normal operating conditions.
+
+simulation:
+  fleet_size: 1000
+  duration_seconds: 86400       # 24 hours
+  telemetry_interval_s: 10      # 10-second telemetry resolution
+  probe_interval_s: 30          # 30-second probe cycle
+  sdc_rate: 0.0                 # No SDC — all GPUs healthy
+  gpus_per_node: 8              # 125 nodes
+  seed: 42
+
+  # No degrading GPUs
+  degrading_gpus: []
+
+  # No correlated failure groups
+  correlated_groups: []
+
+# Expected outcomes:
+#   - Zero anomaly events generated
+#   - All probe results pass
+#   - Telemetry stays within normal ranges:
+#       Temperature: 35-85 C
+#       Power: 100-350 W
+#       Utilization: 10-95%
+#   - SENTINEL should report zero SDC detections

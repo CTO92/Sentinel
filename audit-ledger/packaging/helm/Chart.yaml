@@ -1,0 +1,26 @@
+apiVersion: v2
+name: sentinel-audit-ledger
+description: >-
+  SENTINEL Audit Ledger — immutable, verifiable record of all SENTINEL
+  Silent Data Corruption detection events.  Provides hash-chained audit
+  entries, Merkle-root integrity proofs, and SOC 2 / ISO 27001 compliance
+  reporting.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - sentinel
+  - audit
+  - ledger
+  - gpu
+  - sdc
+  - compliance
+  - merkle
+maintainers:
+  - name: SENTINEL Team
+    email: sentinel@example.com
+dependencies:
+  - name: postgresql
+    version: "~15"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled

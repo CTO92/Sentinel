@@ -1,0 +1,44 @@
+apiVersion: v2
+name: sentinel-probe-agent
+description: >-
+  SENTINEL Probe Agent DaemonSet — deploys GPU Silent Data Corruption
+  detection daemons across all GPU nodes in a Kubernetes cluster.
+  Each agent runs deterministic probes on every streaming multiprocessor,
+  collects telemetry, and streams results to the Correlation Engine.
+
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - gpu
+  - cuda
+  - sdc
+  - silent-data-corruption
+  - monitoring
+  - reliability
+  - nvidia
+  - probe
+
+home: https://sentinel-project.io
+sources:
+  - https://github.com/sentinel-project/sentinel
+
+maintainers:
+  - name: SENTINEL Team
+    email: sentinel-team@example.com
+
+annotations:
+  # Deployment type: runs as a DaemonSet on all GPU-equipped nodes.
+  sentinel.io/deployment-type: daemonset
+  # Requires NVIDIA GPU operator and device plugin.
+  sentinel.io/requires-gpu: "true"
+  # Minimum CUDA driver version required.
+  sentinel.io/min-cuda-driver: "535.0"
+
+dependencies: []
+
+# Kubernetes version constraints.
+kubeVersion: ">=1.25.0-0"
+
+icon: https://sentinel-project.io/assets/logo.png

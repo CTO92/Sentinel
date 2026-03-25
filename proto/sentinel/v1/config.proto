@@ -1,0 +1,108 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "sentinel/v1/probe.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// A dynamic configuration update pushed to agents or subsystems.
+message ConfigUpdate {
+  // Unique identifier for this config change (for audit trail).
+  string update_id = 1;
+
+  // Who initiated this change (e.g., "operator:jane", "auto-tuner").
+  string initiated_by = 2;
+
+  // Human-readable reason for the change.
+  string reason = 3;
+
+  // The specific configuration change.
+  oneof update {
+    ProbeScheduleUpdate probe_schedule = 10;
+    OverheadBudgetUpdate overhead_budget = 11;
+    SamplingRateUpdate sampling_rate = 12;
+    ThresholdUpdate threshold = 13;
+  }
+}
+
+// Update to the probe execution schedule.
+message ProbeScheduleUpdate {
+  // New schedule entries (replaces the entire schedule).
+  repeated ProbeScheduleEntry entries = 1;
+}
+
+// A single entry in the probe schedule.
+message ProbeScheduleEntry {
+  // Probe type.
+  ProbeType type = 1;
+
+  // Execution period in seconds.
+  uint32 period_seconds = 2;
+
+  // Fraction of SMs to cover per period (0.0 to 1.0).
+  double sm_coverage = 3;
+
+  // Scheduling priority (lower = higher priority).
+  uint32 priority = 4;
+
+  // Whether this probe type is enabled.
+  bool enabled = 5;
+
+  // Maximum allowed execution time in milliseconds before timeout.
+  uint32 timeout_ms = 6;
+}
+
+// Update to the overall overhead budget.
+message OverheadBudgetUpdate {
+  // Maximum percentage of GPU time that Sentinel may consume (0.0 to 100.0).
+  double budget_pct = 1;
+}
+
+// Update to a sampling rate for a specific component.
+message SamplingRateUpdate {
+  // Component whose sampling rate is being updated
+  // (e.g., "inference_monitor", "training_monitor", "telemetry").
+  string component = 1;
+
+  // New sampling rate (0.0 to 1.0, where 1.0 = sample everything).
+  double rate = 2;
+}
+
+// Update to a threshold value for a specific component and parameter.
+message ThresholdUpdate {
+  // Component owning this threshold
+  // (e.g., "inference_monitor", "training_monitor", "probe_agent").
+  string component = 1;
+
+  // Parameter name (e.g., "kl_divergence_threshold", "gradient_norm_sigma").
+  string parameter = 2;
+
+  // New threshold value.
+  double value = 3;
+}
+
+// Acknowledgement from a config update recipient.
+message ConfigAck {
+  // The update_id being acknowledged.
+  string update_id = 1;
+
+  // Whether the update was applied successfully.
+  bool applied = 2;
+
+  // Hostname of the agent/component that applied (or rejected) the update.
+  string component_id = 3;
+
+  // Error message if not applied.
+  string error = 4;
+
+  // The component's current effective configuration version after this update.
+  uint64 config_version = 5;
+}
+
+// Bidirectional streaming service for dynamic configuration management.
+service ConfigService {
+  // Engine pushes config updates; agents/components acknowledge receipt
+  // and report whether the update was applied.
+  rpc ConfigStream(stream ConfigAck) returns (stream ConfigUpdate);
+}

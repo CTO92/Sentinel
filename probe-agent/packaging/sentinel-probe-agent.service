@@ -1,0 +1,43 @@
+[Unit]
+Description=SENTINEL Probe Agent — GPU SDC Detection Daemon
+Documentation=https://sentinel-project.io/docs/probe-agent
+After=network-online.target nvidia-persistenced.service
+Wants=network-online.target
+Requires=nvidia-persistenced.service
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/sentinel-probe-agent -c /etc/sentinel/config.json
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
+WatchdogSec=300
+
+# Security hardening.
+User=sentinel
+Group=sentinel
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/log/sentinel
+PrivateTmp=yes
+
+# Resource limits.
+LimitNOFILE=65536
+LimitMEMLOCK=infinity
+LimitNPROC=4096
+
+# Allow access to GPU devices.
+SupplementaryGroups=video render
+
+# Environment.
+Environment=SENTINEL_LOG_LEVEL=info
+EnvironmentFile=-/etc/sentinel/environment
+
+# Logging.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sentinel-probe-agent
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,92 @@
+# =============================================================================
+# SENTINEL Training Monitor Thresholds
+# =============================================================================
+# Thresholds for detecting anomalies during model training.
+# Tuned for large-scale distributed training (100+ GPU data-parallel).
+
+# Gradient norm spike detection.
+gradient_norm:
+  # Rolling window size (number of training steps).
+  window_size: 100
+  # Number of sigma above the rolling mean to flag a spike.
+  sigma_threshold: 5.0
+  # Absolute maximum gradient norm (above this is always anomalous).
+  absolute_max: 100.0
+  # Minimum gradient norm (below this suggests vanishing gradients).
+  absolute_min: 1.0e-7
+  # Whether to use per-layer gradient norms in addition to global.
+  per_layer: true
+  # Severity mapping based on sigma deviation.
+  severity:
+    warning_sigma: 3.0
+    high_sigma: 5.0
+    critical_sigma: 8.0
+
+# Loss trajectory monitoring.
+loss:
+  # Rolling window size for loss smoothing.
+  window_size: 50
+  # Minimum relative spike magnitude to trigger (loss / smoothed_loss).
+  spike_threshold: 3.0
+  # Whether to account for learning rate schedule changes.
+  lr_aware: true
+  # Maximum expected loss value (above this is always anomalous).
+  absolute_max: 20.0
+  # Detect loss plateaus (no improvement for N steps).
+  plateau_detection:
+    enabled: true
+    # Number of steps with no improvement to flag.
+    patience_steps: 5000
+    # Minimum improvement to count as progress.
+    min_improvement: 1.0e-4
+  # Severity mapping.
+  severity:
+    warning_spike: 2.0
+    high_spike: 5.0
+    critical_spike: 10.0
+
+# Cross-rank divergence detection (data-parallel training).
+cross_rank:
+  # Maximum allowed relative divergence between any two ranks' gradient norms.
+  # Computed as: abs(norm_a - norm_b) / max(norm_a, norm_b).
+  max_divergence: 0.05
+  # How often to perform cross-rank comparison (every N steps).
+  comparison_interval_steps: 10
+  # Minimum number of ranks that must agree for majority consensus.
+  # Set to 0 to require all ranks to agree.
+  min_consensus_ranks: 0
+  # Maximum allowed divergence in loss values between ranks.
+  max_loss_divergence: 0.01
+  # Whether to compare weight checksums across ranks periodically.
+  weight_checksum:
+    enabled: true
+    interval_steps: 1000
+  # Severity mapping.
+  severity:
+    warning_divergence: 0.03
+    high_divergence: 0.10
+    critical_divergence: 0.25
+
+# Checkpoint integrity verification thresholds.
+checkpoint:
+  # Maximum allowed time for checkpoint hash computation (seconds).
+  max_hash_time_s: 300
+  # Alert if checkpoint size changes by more than this fraction.
+  max_size_change_fraction: 0.01
+  # Alert if checkpoint hash differs from the hash computed by other ranks.
+  cross_rank_hash_check: true
+
+# Training invariant checks.
+invariants:
+  # Weight values must not contain NaN.
+  no_nan_weights: true
+  # Weight values must not contain Inf.
+  no_inf_weights: true
+  # Gradient values must not contain NaN.
+  no_nan_gradients: true
+  # Maximum allowed weight magnitude.
+  max_weight_magnitude: 1000.0
+  # Maximum allowed single-step weight update magnitude.
+  max_weight_update: 10.0
+  # Learning rate must be positive and below this value.
+  max_learning_rate: 1.0

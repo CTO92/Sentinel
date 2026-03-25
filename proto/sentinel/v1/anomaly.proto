@@ -1,0 +1,130 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Classification of anomaly types detected by the monitoring subsystems.
+enum AnomalyType {
+  ANOMALY_TYPE_UNSPECIFIED = 0;
+
+  // EWMA-smoothed logit distribution has drifted beyond threshold.
+  ANOMALY_TYPE_LOGIT_DRIFT = 1;
+
+  // Output entropy is abnormally high or low.
+  ANOMALY_TYPE_ENTROPY_ANOMALY = 2;
+
+  // KL divergence between reference and observed distribution exceeds limit.
+  ANOMALY_TYPE_KL_DIVERGENCE = 3;
+
+  // Gradient norm spike during training (possible corrupted backward pass).
+  ANOMALY_TYPE_GRADIENT_NORM_SPIKE = 4;
+
+  // Training loss spike not explained by learning-rate schedule.
+  ANOMALY_TYPE_LOSS_SPIKE = 5;
+
+  // Divergence detected between ranks in data-parallel training.
+  ANOMALY_TYPE_CROSS_RANK_DIVERGENCE = 6;
+
+  // Checkpointed model differs from expected (bitwise or hash mismatch).
+  ANOMALY_TYPE_CHECKPOINT_DIVERGENCE = 7;
+
+  // A mathematical invariant (e.g., softmax sums to 1) was violated.
+  ANOMALY_TYPE_INVARIANT_VIOLATION = 8;
+}
+
+// Subsystem that detected the anomaly.
+enum AnomalySource {
+  ANOMALY_SOURCE_UNSPECIFIED = 0;
+
+  // Inference monitoring sidecar.
+  ANOMALY_SOURCE_INFERENCE_MONITOR = 1;
+
+  // Training monitoring hooks.
+  ANOMALY_SOURCE_TRAINING_MONITOR = 2;
+
+  // Mathematical invariant checker.
+  ANOMALY_SOURCE_INVARIANT_CHECKER = 3;
+}
+
+// A single detected anomaly event.
+message AnomalyEvent {
+  // Unique identifier for this event (UUID v7).
+  string event_id = 1;
+
+  // Classification of the anomaly.
+  AnomalyType anomaly_type = 2;
+
+  // Subsystem that detected this anomaly.
+  AnomalySource source = 3;
+
+  // GPU associated with this anomaly.
+  GpuIdentifier gpu = 4;
+
+  // Severity assessment.
+  Severity severity = 5;
+
+  // Anomaly score (magnitude of deviation; interpretation depends on type).
+  float score = 6;
+
+  // Threshold that was exceeded to trigger this event.
+  float threshold = 7;
+
+  // Human-readable description of the anomaly.
+  string details = 8;
+
+  // Fingerprint (hash) of the tensor/output that triggered detection.
+  bytes tensor_fingerprint = 9;
+
+  // When the anomaly was detected.
+  google.protobuf.Timestamp timestamp = 10;
+
+  // Arbitrary key-value metadata for extensibility.
+  map<string, string> metadata = 11;
+
+  // Layer name or operation where anomaly was observed (if applicable).
+  string layer_name = 12;
+
+  // Model identifier (if known).
+  string model_id = 13;
+
+  // Batch index or step number (if applicable).
+  uint64 step_number = 14;
+}
+
+// Batch of anomaly events from a single source.
+message AnomalyBatch {
+  // Source hostname.
+  string source_hostname = 1;
+
+  // Anomaly events in this batch.
+  repeated AnomalyEvent events = 2;
+
+  // Monotonically increasing sequence number.
+  uint64 sequence_number = 3;
+
+  // Timestamp when this batch was assembled.
+  google.protobuf.Timestamp batch_timestamp = 4;
+}
+
+// Acknowledgement for anomaly batches.
+message AnomalyAck {
+  // Sequence number being acknowledged.
+  uint64 sequence_number = 1;
+
+  // True if the batch was accepted.
+  bool accepted = 2;
+
+  // Reason if rejected.
+  string rejection_reason = 3;
+}
+
+// Streaming service for anomaly event ingestion.
+service AnomalyService {
+  // Monitors stream anomaly events; engine acknowledges and may
+  // respond with urgency escalation signals.
+  rpc StreamAnomalyEvents(stream AnomalyBatch) returns (stream AnomalyAck);
+}

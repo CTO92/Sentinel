@@ -1,0 +1,111 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// An edge in the GPU trust graph representing pairwise comparison history.
+message TrustEdge {
+  // First GPU in the pair.
+  GpuIdentifier gpu_a = 1;
+
+  // Second GPU in the pair.
+  GpuIdentifier gpu_b = 2;
+
+  // Number of times these GPUs produced matching outputs.
+  uint64 agreement_count = 3;
+
+  // Number of times these GPUs produced differing outputs.
+  uint64 disagreement_count = 4;
+
+  // Timestamp of the most recent comparison between this pair.
+  google.protobuf.Timestamp last_comparison = 5;
+
+  // Trust score derived from agreement history: agreement / (agreement + disagreement).
+  // Range [0.0, 1.0]; higher means more trustworthy pairing.
+  double trust_score = 6;
+}
+
+// Point-in-time snapshot of the entire trust graph.
+message TrustGraphSnapshot {
+  // All edges in the trust graph.
+  repeated TrustEdge edges = 1;
+
+  // When this snapshot was taken.
+  google.protobuf.Timestamp timestamp = 2;
+
+  // Percentage of all possible GPU pairs that have been compared at least once.
+  double coverage_pct = 3;
+
+  // Total number of GPUs in the graph.
+  uint32 total_gpus = 4;
+
+  // Minimum trust score across all edges.
+  double min_trust_score = 5;
+
+  // Mean trust score across all edges.
+  double mean_trust_score = 6;
+}
+
+// Request to perform Triple Modular Redundancy (TMR) canary computation.
+message TmrRequest {
+  // Unique identifier for this canary run.
+  string canary_id = 1;
+
+  // Exactly 3 GPUs to perform the redundant computation.
+  repeated GpuIdentifier gpus = 2;
+
+  // SHA-256 hash of the input data for this canary.
+  bytes input_hash = 3;
+
+  // Model identifier to run the canary through.
+  string model_id = 4;
+
+  // Specific layer or operation to compare (empty = full forward pass).
+  string target_layer = 5;
+
+  // Timeout for each GPU's computation in milliseconds.
+  uint32 timeout_ms = 6;
+}
+
+// Result of a single GPU's contribution to a TMR canary.
+message TmrGpuResult {
+  // The GPU that produced this result.
+  GpuIdentifier gpu = 1;
+
+  // SHA-256 fingerprint of the output tensor(s).
+  bytes output_fingerprint = 2;
+
+  // Wall-clock execution time in nanoseconds.
+  uint64 execution_time_ns = 3;
+
+  // Whether the computation completed successfully.
+  bool success = 4;
+
+  // Error message if success is false.
+  string error_message = 5;
+}
+
+// Aggregated result of a TMR canary run.
+message TmrResult {
+  // The canary run identifier (matches TmrRequest.canary_id).
+  string canary_id = 1;
+
+  // Results from each of the 3 GPUs.
+  repeated TmrGpuResult results = 2;
+
+  // The consensus output hash (majority vote of 2-of-3 or unanimous).
+  bytes consensus_hash = 3;
+
+  // The GPU that dissented from the majority (if any).
+  GpuIdentifier dissenting_gpu = 4;
+
+  // Whether all 3 GPUs agreed.
+  bool unanimous = 5;
+
+  // Timestamp of this TMR result.
+  google.protobuf.Timestamp timestamp = 6;
+}

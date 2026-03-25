@@ -1,0 +1,65 @@
+# Build outputs
+build/
+target/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.o
+*.a
+*.lib
+*.dll
+*.exe
+
+# Rust
+correlation-engine/target/
+audit-ledger/target/
+
+# Node
+node_modules/
+dashboard/dist/
+
+# Python
+*.egg
+.eggs/
+*.whl
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+*.key
+*.pem
+*.crt
+!deploy/kubernetes/*.yaml
+
+# Test artifacts
+*.npy
+coverage/
+htmlcov/
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Probe agent build
+probe-agent/build/
+tools/sdc-injector/build/
+
+# Generated protobuf code
+proto/gen/

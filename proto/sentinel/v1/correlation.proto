@@ -1,0 +1,172 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+import "sentinel/v1/health.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Types of correlation patterns detected across events.
+enum PatternType {
+  PATTERN_TYPE_UNSPECIFIED = 0;
+
+  // Multiple anomaly types on the same GPU in a time window.
+  PATTERN_TYPE_MULTI_SIGNAL = 1;
+
+  // Probe failures and anomalies co-occurring on the same SM.
+  PATTERN_TYPE_SM_LOCALIZED = 2;
+
+  // Thermal/power anomalies correlating with computation errors.
+  PATTERN_TYPE_ENVIRONMENTAL = 3;
+
+  // Multiple GPUs on the same node showing correlated failures.
+  PATTERN_TYPE_NODE_CORRELATED = 4;
+
+  // Failures correlated with specific firmware or driver versions.
+  PATTERN_TYPE_FIRMWARE_CORRELATED = 5;
+
+  // TMR dissent correlating with other signals.
+  PATTERN_TYPE_TMR_CONFIRMED = 6;
+}
+
+// A correlation event linking multiple raw events into a higher-level finding.
+message CorrelationEvent {
+  // Unique identifier for this correlation event (UUID v7).
+  string event_id = 1;
+
+  // IDs of the raw events (probes, anomalies, telemetry) that were correlated.
+  repeated string events_correlated = 2;
+
+  // The type of pattern detected.
+  PatternType pattern_type = 3;
+
+  // Confidence score for this correlation (0.0 to 1.0).
+  double confidence = 4;
+
+  // GPU attributed as the root cause (if determined).
+  GpuIdentifier attributed_gpu = 5;
+
+  // SM attributed as the root cause (if localized to SM level).
+  SmIdentifier attributed_sm = 6;
+
+  // Human-readable description of the correlation finding.
+  string description = 7;
+
+  // When this correlation was computed.
+  google.protobuf.Timestamp timestamp = 8;
+
+  // Severity assessment based on the correlated evidence.
+  Severity severity = 9;
+
+  // Recommended action based on this correlation.
+  string recommended_action = 10;
+}
+
+// Request to query the health of a specific GPU.
+message HealthQueryRequest {
+  // GPU to query.
+  GpuIdentifier gpu = 1;
+
+  // Whether to include per-SM breakdown.
+  bool include_sm_health = 2;
+}
+
+// Response with the health of a specific GPU.
+message HealthQueryResponse {
+  // Current health record.
+  GpuHealth health = 1;
+
+  // Recent correlation events involving this GPU.
+  repeated CorrelationEvent recent_correlations = 2;
+}
+
+// Request for the fleet-wide health summary.
+message FleetHealthRequest {
+  // Optional: filter by hostname prefix.
+  string hostname_prefix = 1;
+
+  // Optional: filter by GPU model.
+  string model_filter = 2;
+
+  // Optional: only include GPUs in these states.
+  repeated GpuHealthState state_filter = 3;
+}
+
+// Response with the fleet-wide health summary.
+message FleetHealthResponse {
+  // Aggregated fleet summary.
+  FleetHealthSummary summary = 1;
+
+  // Per-GPU health records (limited to top N worst if fleet is large).
+  repeated GpuHealth gpu_health = 2;
+
+  // Whether the response was truncated.
+  bool truncated = 3;
+
+  // Total matching GPUs (may be larger than gpu_health if truncated).
+  uint32 total_matching = 4;
+}
+
+// Request for historical health data of a specific GPU.
+message GpuHistoryRequest {
+  // GPU to query.
+  GpuIdentifier gpu = 1;
+
+  // Start of the time range.
+  google.protobuf.Timestamp start_time = 2;
+
+  // End of the time range.
+  google.protobuf.Timestamp end_time = 3;
+
+  // Maximum number of events to return.
+  uint32 limit = 4;
+
+  // Pagination token for subsequent requests.
+  string page_token = 5;
+}
+
+// Response with historical health data.
+message GpuHistoryResponse {
+  // Historical state transitions.
+  repeated StateTransition state_transitions = 1;
+
+  // Historical correlation events.
+  repeated CorrelationEvent correlations = 2;
+
+  // Reliability score time series (sampled).
+  repeated ReliabilitySample reliability_history = 3;
+
+  // Pagination token for the next page (empty if no more results).
+  string next_page_token = 4;
+}
+
+// A recorded GPU state transition.
+message StateTransition {
+  GpuHealthState from_state = 1;
+  GpuHealthState to_state = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string reason = 4;
+  string initiated_by = 5;
+}
+
+// A point-in-time reliability score sample.
+message ReliabilitySample {
+  google.protobuf.Timestamp timestamp = 1;
+  double reliability_score = 2;
+  double alpha = 3;
+  double beta = 4;
+}
+
+// Service for querying correlated health data.
+service CorrelationService {
+  // Query health of a specific GPU.
+  rpc QueryGpuHealth(HealthQueryRequest) returns (HealthQueryResponse);
+
+  // Query fleet-wide health summary.
+  rpc QueryFleetHealth(FleetHealthRequest) returns (FleetHealthResponse);
+
+  // Query historical health data for a GPU.
+  rpc GetGpuHistory(GpuHistoryRequest) returns (GpuHistoryResponse);
+}

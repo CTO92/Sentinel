@@ -1,0 +1,46 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Uniquely identifies a GPU within the fleet.
+message GpuIdentifier {
+  // NVIDIA UUID (e.g., "GPU-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx").
+  string uuid = 1;
+
+  // Hostname of the machine containing this GPU.
+  string hostname = 2;
+
+  // PCI device index on the host (0-based).
+  uint32 device_index = 3;
+
+  // GPU model name (e.g., "NVIDIA H100 80GB HBM3").
+  string model = 4;
+
+  // Driver version string (e.g., "535.129.03").
+  string driver_version = 5;
+
+  // GPU firmware/VBIOS version.
+  string firmware_version = 6;
+}
+
+// Identifies a specific Streaming Multiprocessor on a GPU.
+message SmIdentifier {
+  // The GPU containing this SM.
+  GpuIdentifier gpu = 1;
+
+  // SM index within the GPU (0-based).
+  uint32 sm_id = 2;
+}
+
+// Severity levels for events, anomalies, and alerts.
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  INFO = 1;
+  WARNING = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+}

@@ -1,0 +1,157 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Types of hardware integrity probes.
+enum ProbeType {
+  PROBE_TYPE_UNSPECIFIED = 0;
+
+  // Fused multiply-add determinism check.
+  PROBE_TYPE_FMA = 1;
+
+  // Tensor Core matrix-multiply reproducibility check.
+  PROBE_TYPE_TENSOR_CORE = 2;
+
+  // Transcendental function (sin, cos, exp, log) accuracy check.
+  PROBE_TYPE_TRANSCENDENTAL = 3;
+
+  // AES-based combinational logic exhaustive-path check.
+  PROBE_TYPE_AES = 4;
+
+  // GPU global memory integrity check (walking-ones / MATS+).
+  PROBE_TYPE_MEMORY = 5;
+
+  // Register file integrity check via known-pattern writes.
+  PROBE_TYPE_REGISTER_FILE = 6;
+
+  // Shared memory integrity check.
+  PROBE_TYPE_SHARED_MEMORY = 7;
+}
+
+// Result of a single probe execution.
+enum ProbeResult {
+  PROBE_RESULT_UNSPECIFIED = 0;
+
+  // Probe completed and output matched expected golden value.
+  PROBE_RESULT_PASS = 1;
+
+  // Probe completed but output did NOT match expected golden value.
+  PROBE_RESULT_FAIL = 2;
+
+  // Probe encountered an execution error (kernel launch failure, etc.).
+  PROBE_RESULT_ERROR = 3;
+
+  // Probe did not complete within the allowed time window.
+  PROBE_RESULT_TIMEOUT = 4;
+}
+
+// Detailed information about a bit-level mismatch when a probe fails.
+message MismatchDetail {
+  // Byte offset within the output buffer where the mismatch was detected.
+  uint64 byte_offset = 1;
+
+  // Expected value at the mismatch location.
+  bytes expected_value = 2;
+
+  // Actual value observed at the mismatch location.
+  bytes actual_value = 3;
+
+  // Bit positions that differ (0-indexed from LSB).
+  repeated uint32 differing_bits = 4;
+}
+
+// A single probe execution with its result and environmental context.
+message ProbeExecution {
+  // Unique identifier for this execution (UUID v7).
+  string execution_id = 1;
+
+  // The type of probe that was run.
+  ProbeType probe_type = 2;
+
+  // The SM on which this probe executed.
+  SmIdentifier sm = 3;
+
+  // Pass/fail/error/timeout result.
+  ProbeResult result = 4;
+
+  // SHA-256 of the expected (golden) output.
+  bytes expected_hash = 5;
+
+  // SHA-256 of the actual output produced by the GPU.
+  bytes actual_hash = 6;
+
+  // Detailed mismatch information (populated only on FAIL).
+  MismatchDetail mismatch_detail = 7;
+
+  // Wall-clock execution time of the probe kernel in nanoseconds.
+  uint64 execution_time_ns = 8;
+
+  // GPU core clock frequency at time of execution (MHz).
+  uint32 gpu_clock_mhz = 9;
+
+  // GPU temperature at time of execution (Celsius).
+  float gpu_temperature_c = 10;
+
+  // GPU power draw at time of execution (Watts).
+  float gpu_power_w = 11;
+
+  // Timestamp when the probe completed.
+  google.protobuf.Timestamp timestamp = 12;
+
+  // HMAC-SHA256 signature over fields 1-11, keyed with the agent's secret.
+  // Ensures probe results cannot be tampered with in transit.
+  bytes hmac_signature = 13;
+}
+
+// A batch of probe results from a single agent, sent as a unit.
+message ProbeResultBatch {
+  // The agent's hostname for correlation.
+  string agent_hostname = 1;
+
+  // Ordered list of probe executions in this batch.
+  repeated ProbeExecution executions = 2;
+
+  // Monotonically increasing sequence number for gap detection.
+  uint64 sequence_number = 3;
+
+  // Timestamp when the batch was assembled.
+  google.protobuf.Timestamp batch_timestamp = 4;
+}
+
+// Acknowledgement from the correlation engine for received probe batches.
+message ProbeAck {
+  // Sequence number being acknowledged.
+  uint64 sequence_number = 1;
+
+  // True if the batch was accepted and persisted.
+  bool accepted = 2;
+
+  // Human-readable reason if not accepted (e.g., HMAC verification failure).
+  string rejection_reason = 3;
+
+  // Optional updated probe schedule to apply immediately.
+  repeated ProbeScheduleOverride schedule_overrides = 4;
+}
+
+// An override directive for a specific probe type's schedule.
+message ProbeScheduleOverride {
+  ProbeType probe_type = 1;
+
+  // New period in seconds (0 means disable).
+  uint32 period_seconds = 2;
+
+  // Override duration; after this, revert to the baseline schedule.
+  uint32 duration_seconds = 3;
+}
+
+// Bidirectional streaming service for probe result ingestion.
+service ProbeService {
+  // Agents stream probe result batches; the engine streams back acks
+  // and dynamic schedule adjustments.
+  rpc StreamProbeResults(stream ProbeResultBatch) returns (stream ProbeAck);
+}

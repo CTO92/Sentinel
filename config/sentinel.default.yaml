@@ -1,0 +1,380 @@
+# =============================================================================
+# SENTINEL SDC Detection Framework - Master Configuration
+# =============================================================================
+# This is the default configuration file. Override values via:
+#   1. Environment-specific overlay files (e.g., sentinel.production.yaml)
+#   2. Environment variables prefixed with SENTINEL_ (e.g., SENTINEL_PROBE_AGENT_OVERHEAD_BUDGET_PCT=1.5)
+#   3. Dynamic config updates via the ConfigService gRPC stream
+
+# -----------------------------------------------------------------------------
+# Probe Agent Configuration
+# -----------------------------------------------------------------------------
+probe_agent:
+  # Maximum percentage of GPU time Sentinel probes may consume.
+  # The scheduler will throttle or skip probes to stay within this budget.
+  overhead_budget_pct: 2.0
+
+  # Path to the probe schedule file (relative to config directory).
+  schedule_file: "probe_schedules/default.yaml"
+
+  # HMAC key for signing probe results (base64-encoded).
+  # In production, this should be injected via a secrets manager.
+  hmac_key: ""
+
+  # How many probe results to batch before sending to the correlation engine.
+  batch_size: 64
+
+  # Maximum time to wait before flushing an incomplete batch (milliseconds).
+  batch_flush_interval_ms: 1000
+
+  # gRPC endpoint of the correlation engine for probe result streaming.
+  correlation_engine_endpoint: "correlation-engine:50051"
+
+  # Enable mTLS for gRPC connections.
+  tls:
+    enabled: true
+    cert_file: "/etc/sentinel/certs/agent.crt"
+    key_file: "/etc/sentinel/certs/agent.key"
+    ca_file: "/etc/sentinel/certs/ca.crt"
+
+  # GPU discovery settings.
+  discovery:
+    # Auto-detect GPUs via NVML on startup.
+    auto_detect: true
+    # Explicit GPU UUIDs to monitor (overrides auto-detect if non-empty).
+    gpu_uuids: []
+
+  # Kernel launch configuration.
+  kernel:
+    # CUDA stream priority for probe kernels (-1 = low priority).
+    stream_priority: -1
+    # Whether to use CUDA graphs for probe kernel launches (reduces launch overhead).
+    use_cuda_graphs: true
+
+  # Telemetry collection settings.
+  telemetry:
+    # How often to collect GPU telemetry (seconds).
+    collection_interval_s: 10
+    # Whether to collect NVLink statistics.
+    collect_nvlink: true
+    # Whether to collect PCIe statistics.
+    collect_pcie: true
+
+# -----------------------------------------------------------------------------
+# Inference Monitor Configuration
+# -----------------------------------------------------------------------------
+inference_monitor:
+  # Whether the inference monitor is enabled.
+  enabled: true
+
+  # Path to the inference threshold configuration file.
+  thresholds_file: "thresholds/inference_thresholds.yaml"
+
+  # Sampling rate for inference requests (1.0 = monitor every request).
+  sampling_rate: 0.01
+
+  # EWMA (Exponentially Weighted Moving Average) configuration for logit tracking.
+  ewma:
+    # Smoothing factor alpha (0 < alpha <= 1). Smaller = smoother, slower to react.
+    alpha: 0.01
+    # Number of warmup samples before anomaly detection activates.
+    warmup_samples: 1000
+
+  # KL divergence monitoring.
+  kl_divergence:
+    # Reference distribution update interval (seconds).
+    reference_update_interval_s: 3600
+    # Number of samples to use for reference distribution estimation.
+    reference_sample_count: 10000
+    # Binning strategy for continuous distributions: "histogram" or "kde".
+    binning_strategy: "histogram"
+    # Number of bins for histogram binning.
+    num_bins: 256
+
+  # Entropy monitoring.
+  entropy:
+    # Window size for computing rolling entropy statistics.
+    window_size: 1000
+
+  # Spectral analysis of output sequences.
+  spectral:
+    # FFT window size (must be a power of 2).
+    fft_window_size: 1024
+    # Whether spectral analysis is enabled (higher overhead).
+    enabled: false
+
+  # Output fingerprinting for TMR comparisons.
+  fingerprinting:
+    # Hash algorithm: "sha256" or "xxhash".
+    algorithm: "xxhash"
+    # Whether to fingerprint intermediate layer outputs.
+    intermediate_layers: false
+
+  # gRPC endpoint of the correlation engine for anomaly streaming.
+  correlation_engine_endpoint: "correlation-engine:50051"
+
+  # Batch settings for anomaly event reporting.
+  batch_size: 32
+  batch_flush_interval_ms: 500
+
+# -----------------------------------------------------------------------------
+# Training Monitor Configuration
+# -----------------------------------------------------------------------------
+training_monitor:
+  # Whether the training monitor is enabled.
+  enabled: true
+
+  # Path to the training threshold configuration file.
+  thresholds_file: "thresholds/training_thresholds.yaml"
+
+  # Sampling rate for training steps (1.0 = monitor every step).
+  sampling_rate: 0.1
+
+  # Gradient norm monitoring.
+  gradient_norm:
+    # Number of recent steps to use for computing the rolling mean/stddev.
+    window_size: 100
+    # Number of sigma above the rolling mean to trigger an anomaly.
+    sigma_threshold: 5.0
+
+  # Loss trajectory monitoring.
+  loss:
+    # Window size for loss smoothing.
+    window_size: 50
+    # Minimum relative spike magnitude to trigger an anomaly.
+    spike_threshold: 3.0
+    # Whether to account for learning rate schedule when detecting spikes.
+    lr_aware: true
+
+  # Cross-rank divergence monitoring (for data-parallel training).
+  cross_rank:
+    # Whether cross-rank monitoring is enabled.
+    enabled: true
+    # How often to compare gradient norms across ranks (steps).
+    comparison_interval_steps: 10
+    # Maximum allowed relative divergence between ranks.
+    max_divergence: 0.05
+    # AllReduce implementation to use for cross-rank comparison: "nccl" or "gloo".
+    backend: "nccl"
+
+  # Checkpoint integrity verification.
+  checkpoint:
+    # Whether to verify checkpoint hashes after saving.
+    verify_on_save: true
+    # Whether to verify checkpoint hashes before loading.
+    verify_on_load: true
+    # Hash algorithm for checkpoints: "sha256" or "blake3".
+    hash_algorithm: "blake3"
+
+  # gRPC endpoint of the correlation engine for anomaly streaming.
+  correlation_engine_endpoint: "correlation-engine:50051"
+
+  # Batch settings for anomaly event reporting.
+  batch_size: 32
+  batch_flush_interval_ms: 500
+
+# -----------------------------------------------------------------------------
+# Correlation Engine Configuration
+# -----------------------------------------------------------------------------
+correlation_engine:
+  # gRPC listen address.
+  listen_address: "0.0.0.0:50051"
+
+  # TLS configuration for the gRPC server.
+  tls:
+    enabled: true
+    cert_file: "/etc/sentinel/certs/engine.crt"
+    key_file: "/etc/sentinel/certs/engine.key"
+    ca_file: "/etc/sentinel/certs/ca.crt"
+    # Require client certificate authentication.
+    mutual_tls: true
+
+  # Bayesian reliability model parameters.
+  bayesian_model:
+    # Prior alpha for the Beta distribution (effective prior successes).
+    prior_alpha: 100.0
+    # Prior beta for the Beta distribution (effective prior failures).
+    prior_beta: 1.0
+    # Time-decay half-life for old observations (hours).
+    # Older probe results contribute less to the current reliability estimate.
+    decay_half_life_hours: 168.0
+
+  # State machine thresholds for GPU lifecycle transitions.
+  state_machine:
+    # Reliability score below which a HEALTHY GPU becomes SUSPECT.
+    healthy_to_suspect_threshold: 0.95
+    # Reliability score below which a SUSPECT GPU is QUARANTINED.
+    suspect_to_quarantine_threshold: 0.80
+    # Number of consecutive probe failures to immediately quarantine.
+    immediate_quarantine_failures: 3
+    # Reliability score above which a QUARANTINED GPU can be REINSTATED.
+    quarantine_to_healthy_threshold: 0.98
+    # Number of consecutive passes required for reinstatement.
+    reinstatement_pass_count: 1000
+    # Maximum time in quarantine before condemning (hours).
+    max_quarantine_hours: 720
+    # Whether quarantine actions require human approval.
+    require_approval: false
+
+  # Correlation window settings.
+  correlation:
+    # Time window for correlating events (seconds).
+    window_seconds: 300
+    # Minimum confidence score to emit a correlation event.
+    min_confidence: 0.6
+    # Maximum number of events to hold in the correlation buffer.
+    buffer_size: 100000
+
+  # TMR (Triple Modular Redundancy) canary settings.
+  tmr:
+    # Whether TMR canaries are enabled.
+    enabled: true
+    # How often to run TMR canaries (seconds).
+    interval_seconds: 600
+    # Timeout for each GPU's TMR computation (milliseconds).
+    timeout_ms: 30000
+    # How to select GPU triples: "round_robin", "random", "suspect_priority".
+    selection_strategy: "suspect_priority"
+
+  # Trust graph settings.
+  trust_graph:
+    # Whether the trust graph is maintained.
+    enabled: true
+    # How often to snapshot the trust graph (seconds).
+    snapshot_interval_seconds: 3600
+
+  # Database configuration.
+  database:
+    # PostgreSQL connection string for state storage.
+    postgres_url: "postgresql://sentinel:sentinel@postgres:5432/sentinel?sslmode=require"
+    # Connection pool size.
+    max_connections: 20
+    # Connection timeout (milliseconds).
+    connect_timeout_ms: 5000
+
+  # ScyllaDB configuration for time-series data.
+  scylla:
+    # Contact points.
+    contact_points:
+      - "scylladb:9042"
+    # Keyspace name.
+    keyspace: "sentinel"
+    # Replication factor.
+    replication_factor: 3
+    # Write consistency level.
+    write_consistency: "LOCAL_QUORUM"
+    # Read consistency level.
+    read_consistency: "LOCAL_ONE"
+
+  # Redis configuration for caching and pub/sub.
+  redis:
+    # Redis connection URL.
+    url: "redis://redis:6379/0"
+    # Connection pool size.
+    pool_size: 10
+
+  # Prometheus metrics export.
+  metrics:
+    # Whether to expose a Prometheus metrics endpoint.
+    enabled: true
+    # Listen address for the metrics HTTP server.
+    listen_address: "0.0.0.0:9090"
+
+# -----------------------------------------------------------------------------
+# Audit Ledger Configuration
+# -----------------------------------------------------------------------------
+audit_ledger:
+  # gRPC listen address.
+  listen_address: "0.0.0.0:50052"
+
+  # TLS configuration.
+  tls:
+    enabled: true
+    cert_file: "/etc/sentinel/certs/audit.crt"
+    key_file: "/etc/sentinel/certs/audit.key"
+    ca_file: "/etc/sentinel/certs/ca.crt"
+    mutual_tls: true
+
+  # Hash chain configuration.
+  chain:
+    # Hash algorithm for the chain: "sha256" or "blake3".
+    hash_algorithm: "sha256"
+    # Batch size for Merkle tree computation.
+    batch_size: 1024
+    # How often to flush and seal a batch (seconds).
+    flush_interval_seconds: 60
+
+  # Storage backend configuration.
+  storage:
+    # Primary storage: "postgres" or "scylla".
+    backend: "scylla"
+    # ScyllaDB settings (reuses correlation engine's ScyllaDB cluster).
+    scylla:
+      contact_points:
+        - "scylladb:9042"
+      keyspace: "sentinel_audit"
+      replication_factor: 3
+      write_consistency: "LOCAL_QUORUM"
+      read_consistency: "LOCAL_QUORUM"
+
+  # Retention policy.
+  retention:
+    # How long to keep detailed audit entries (days). 0 = forever.
+    detail_retention_days: 365
+    # How long to keep Merkle roots and batch summaries (days). 0 = forever.
+    summary_retention_days: 0
+    # How often to run the retention cleanup job (hours).
+    cleanup_interval_hours: 24
+
+  # Verification settings.
+  verification:
+    # How often to run automatic chain integrity checks (hours).
+    auto_verify_interval_hours: 6
+    # Number of recent entries to verify in each automatic check.
+    auto_verify_depth: 10000
+
+  # Prometheus metrics export.
+  metrics:
+    enabled: true
+    listen_address: "0.0.0.0:9091"
+
+# -----------------------------------------------------------------------------
+# Alerting Configuration
+# -----------------------------------------------------------------------------
+alerting:
+  # Path to alert rules configuration.
+  rules_file: "alerting/alert_rules.yaml"
+
+  # Notification channels.
+  channels:
+    slack:
+      enabled: false
+      webhook_url: ""
+      default_channel: "#sentinel-alerts"
+    pagerduty:
+      enabled: false
+      integration_key: ""
+      severity_mapping:
+        CRITICAL: "critical"
+        HIGH: "error"
+        WARNING: "warning"
+        INFO: "info"
+    email:
+      enabled: false
+      smtp_host: ""
+      smtp_port: 587
+      from_address: "sentinel@example.com"
+      to_addresses: []
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  # Log level: "trace", "debug", "info", "warn", "error".
+  level: "info"
+  # Log format: "json" or "text".
+  format: "json"
+  # Whether to include source location in log entries.
+  include_source: false
+  # Output: "stdout", "stderr", or a file path.
+  output: "stdout"

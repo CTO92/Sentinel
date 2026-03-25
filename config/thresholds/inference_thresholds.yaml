@@ -1,0 +1,86 @@
+# =============================================================================
+# SENTINEL Inference Monitor Thresholds
+# =============================================================================
+# Thresholds for detecting anomalies in inference workloads.
+# These values are tuned for large language models (GPT-class).
+# Adjust for your specific model architecture and deployment.
+
+# EWMA-smoothed logit distribution drift detection.
+logit_ewma:
+  # Maximum allowed drift in the EWMA of the top-1 logit probability.
+  # Expressed as absolute deviation from the running mean.
+  max_drift: 0.15
+  # Number of standard deviations from the EWMA mean to flag as anomalous.
+  sigma_threshold: 4.0
+  # Minimum number of samples before drift detection activates.
+  warmup_samples: 1000
+  # EWMA smoothing factor.
+  alpha: 0.01
+  # Severity mapping based on drift magnitude.
+  severity:
+    warning_threshold: 0.10
+    high_threshold: 0.20
+    critical_threshold: 0.35
+
+# KL divergence between observed and reference output distributions.
+kl_divergence:
+  # Maximum allowed KL divergence (nats) before flagging.
+  threshold: 0.5
+  # Symmetric KL divergence (average of KL(P||Q) and KL(Q||P)).
+  symmetric: true
+  # Number of bins for discretizing continuous distributions.
+  num_bins: 256
+  # Minimum number of samples for a valid reference distribution.
+  min_reference_samples: 10000
+  # How often to update the reference distribution (seconds).
+  reference_update_interval_s: 3600
+  # Severity mapping.
+  severity:
+    warning_threshold: 0.3
+    high_threshold: 0.8
+    critical_threshold: 1.5
+
+# Output entropy monitoring.
+entropy:
+  # Number of recent samples in the rolling entropy window.
+  window_size: 1000
+  # Maximum allowed entropy deviation from the rolling mean (in nats).
+  max_deviation: 2.0
+  # Number of sigma from the rolling mean to trigger.
+  sigma_threshold: 4.0
+  # Minimum entropy threshold (below this suggests output collapse).
+  min_entropy: 0.5
+  # Maximum entropy threshold (above this suggests random output).
+  max_entropy: 12.0
+  # Severity mapping.
+  severity:
+    warning_sigma: 3.0
+    high_sigma: 5.0
+    critical_sigma: 7.0
+
+# Spectral analysis of output token sequences.
+spectral:
+  # FFT window size (must be a power of 2).
+  fft_window_size: 1024
+  # Maximum allowed spectral energy in any single frequency bin,
+  # as a fraction of total energy. High concentration suggests repetition.
+  max_spectral_concentration: 0.3
+  # Frequency range to monitor (as fraction of Nyquist frequency).
+  monitor_freq_low: 0.01
+  monitor_freq_high: 0.5
+  # Severity mapping.
+  severity:
+    warning_concentration: 0.2
+    high_concentration: 0.4
+    critical_concentration: 0.6
+
+# Invariant checks for inference outputs.
+invariants:
+  # Softmax outputs must sum to 1.0 within this tolerance.
+  softmax_sum_tolerance: 1.0e-4
+  # No logit may exceed this absolute value (suggests overflow).
+  max_logit_magnitude: 100.0
+  # No probability may be negative.
+  non_negative_probs: true
+  # Output tensor must not contain NaN or Inf values.
+  no_nan_inf: true

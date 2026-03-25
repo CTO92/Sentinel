@@ -1,0 +1,51 @@
+# SENTINEL CODEOWNERS
+#
+# Each line maps a file pattern to one or more teams/users who are
+# automatically requested for review when a PR touches matching files.
+# Order matters — later rules override earlier ones.
+
+# Default owners for everything
+*                                   @sentinel-maintainers
+
+# Probe Agent (CUDA/C++)
+/probe-agent/                       @sentinel-gpu-team
+/proto/                             @sentinel-gpu-team @sentinel-platform-team
+
+# Inference Monitor (Python)
+/inference-monitor/                 @sentinel-ml-team
+
+# Training Monitor (Python)
+/training-monitor/                  @sentinel-ml-team
+
+# Correlation Engine (Rust)
+/correlation-engine/                @sentinel-platform-team
+
+# Audit Ledger (Rust)
+/audit-ledger/                      @sentinel-platform-team
+
+# Dashboard
+/dashboard/                         @sentinel-frontend-team
+
+# SDK
+/sdk/                               @sentinel-sdk-team
+
+# Deployment and Infrastructure
+/deploy/                            @sentinel-infra-team
+/config/                            @sentinel-infra-team
+
+# CI/CD Workflows
+/.github/                           @sentinel-infra-team @sentinel-maintainers
+
+# Tools
+/tools/sdc-injector/                @sentinel-gpu-team
+/tools/golden-answer-generator/     @sentinel-gpu-team
+/tools/fleet-simulator/             @sentinel-platform-team
+
+# Benchmarks
+/benchmarks/                        @sentinel-platform-team @sentinel-gpu-team
+
+# Root project files
+/README.md                          @sentinel-maintainers
+/CONTRIBUTING.md                    @sentinel-maintainers
+/SECURITY.md                        @sentinel-maintainers
+/LICENSE                            @sentinel-maintainers

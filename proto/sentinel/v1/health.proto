@@ -1,0 +1,134 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Lifecycle states for a GPU in the fleet.
+enum GpuHealthState {
+  GPU_HEALTH_STATE_UNSPECIFIED = 0;
+
+  // GPU is operating normally; no evidence of SDC.
+  GPU_HEALTH_STATE_HEALTHY = 1;
+
+  // GPU has shown anomalous signals; under increased monitoring.
+  GPU_HEALTH_STATE_SUSPECT = 2;
+
+  // GPU has been removed from production workloads pending investigation.
+  GPU_HEALTH_STATE_QUARANTINED = 3;
+
+  // GPU is undergoing deep diagnostic testing.
+  GPU_HEALTH_STATE_DEEP_TEST = 4;
+
+  // GPU has been permanently marked as unreliable and must be replaced.
+  GPU_HEALTH_STATE_CONDEMNED = 5;
+}
+
+// Health status and Bayesian reliability model for a single GPU.
+message GpuHealth {
+  // The GPU this health record describes.
+  GpuIdentifier gpu = 1;
+
+  // Current lifecycle state.
+  GpuHealthState state = 2;
+
+  // Bayesian reliability score: alpha / (alpha + beta).
+  // Range [0.0, 1.0]; higher means more reliable.
+  double reliability_score = 3;
+
+  // Beta distribution alpha parameter (successes + prior).
+  double alpha = 4;
+
+  // Beta distribution beta parameter (failures + prior).
+  double beta = 5;
+
+  // Timestamp of the most recent probe execution on this GPU.
+  google.protobuf.Timestamp last_probe_time = 6;
+
+  // Timestamp of the most recent anomaly attributed to this GPU.
+  google.protobuf.Timestamp last_anomaly_time = 7;
+
+  // Cumulative count of passed probes (lifetime).
+  uint64 probe_pass_count = 8;
+
+  // Cumulative count of failed probes (lifetime).
+  uint64 probe_fail_count = 9;
+
+  // Cumulative count of anomalies attributed to this GPU (lifetime).
+  uint64 anomaly_count = 10;
+
+  // When the GPU last transitioned to its current state.
+  google.protobuf.Timestamp state_changed_at = 11;
+
+  // Human-readable reason for the most recent state change.
+  string state_change_reason = 12;
+
+  // Per-SM health breakdown.
+  repeated SmHealth sm_health = 13;
+
+  // Current anomaly rate (anomalies per hour, rolling window).
+  double anomaly_rate = 14;
+
+  // Current probe failure rate (failures per hour, rolling window).
+  double probe_failure_rate = 15;
+}
+
+// Health status for a single Streaming Multiprocessor.
+message SmHealth {
+  // The SM this record describes.
+  SmIdentifier sm = 1;
+
+  // Bayesian reliability score for this SM.
+  double reliability_score = 2;
+
+  // Count of passed probes on this SM.
+  uint64 probe_pass_count = 3;
+
+  // Count of failed probes on this SM.
+  uint64 probe_fail_count = 4;
+
+  // Whether this SM is currently disabled/masked.
+  bool disabled = 5;
+
+  // Reason for disabling (if applicable).
+  string disable_reason = 6;
+}
+
+// Aggregated health summary for the entire GPU fleet.
+message FleetHealthSummary {
+  // Total number of GPUs tracked by the system.
+  uint32 total_gpus = 1;
+
+  // Number of GPUs in HEALTHY state.
+  uint32 healthy = 2;
+
+  // Number of GPUs in SUSPECT state.
+  uint32 suspect = 3;
+
+  // Number of GPUs in QUARANTINED state.
+  uint32 quarantined = 4;
+
+  // Number of GPUs in DEEP_TEST state.
+  uint32 deep_test = 5;
+
+  // Number of GPUs in CONDEMNED state.
+  uint32 condemned = 6;
+
+  // Fleet-wide estimated SDC rate (events per GPU-hour).
+  double overall_sdc_rate = 7;
+
+  // Fleet-wide average reliability score.
+  double average_reliability_score = 8;
+
+  // Timestamp of this summary snapshot.
+  google.protobuf.Timestamp snapshot_time = 9;
+
+  // Number of active probe agents reporting.
+  uint32 active_agents = 10;
+
+  // Time window over which rates are computed (seconds).
+  uint32 rate_window_seconds = 11;
+}

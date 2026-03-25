@@ -1,0 +1,78 @@
+# =============================================================================
+# SENTINEL Probe Tolerances
+# =============================================================================
+# Per-probe-type tolerances for output comparison.
+# Probes that test deterministic operations use exact (zero-tolerance) matching.
+# Probes that test floating-point operations may allow ULP-based tolerances.
+
+probes:
+  FMA:
+    # FMA probes use carefully chosen inputs that produce exact results.
+    # Any deviation indicates hardware corruption.
+    tolerance_mode: "exact"
+    max_ulp: 0
+    description: >
+      FMA operations with pre-computed golden values must match exactly.
+      The probe inputs are selected to avoid rounding ambiguity, so any
+      mismatch is a true positive for hardware corruption.
+
+  TENSOR_CORE:
+    # Tensor Core operations (e.g., HMMA) should produce deterministic results
+    # for the same inputs on the same hardware generation.
+    tolerance_mode: "exact"
+    max_ulp: 0
+    description: >
+      Tensor Core matrix multiply results must be bit-exact for the same
+      input matrices on the same GPU architecture. Different architectures
+      may differ, but self-consistency is required.
+
+  TRANSCENDENTAL:
+    # Transcendental functions (sin, cos, exp, log) may have up to 1 ULP
+    # variation across different SM implementations on some architectures.
+    # We allow 1 ULP to avoid false positives but catch multi-bit errors.
+    tolerance_mode: "ulp"
+    max_ulp: 1
+    # For FP16 transcendentals, allow slightly more tolerance.
+    fp16_max_ulp: 2
+    # For BF16 transcendentals.
+    bf16_max_ulp: 2
+    description: >
+      Transcendental function outputs are compared with up to 1 ULP
+      tolerance for FP32 and 2 ULP for FP16/BF16. This accounts for
+      documented implementation variations while catching corruption.
+
+  AES:
+    # AES is a purely integer/bitwise operation. Results must be exact.
+    tolerance_mode: "exact"
+    max_ulp: 0
+    description: >
+      AES encryption/decryption must produce bit-exact results. This probe
+      exercises the integer ALU and bitwise logic paths. Any deviation
+      indicates combinational logic corruption.
+
+  MEMORY:
+    # Memory probes write known patterns and read them back.
+    # Any deviation indicates a memory fault.
+    tolerance_mode: "exact"
+    max_ulp: 0
+    description: >
+      Memory integrity probes use walking-ones, walking-zeros, and MATS+
+      patterns. Results must be bit-exact. Any deviation indicates a
+      stuck bit, addressing fault, or memory cell degradation.
+
+  REGISTER_FILE:
+    # Register file probes write and read known patterns.
+    tolerance_mode: "exact"
+    max_ulp: 0
+    description: >
+      Register file integrity probes write known patterns to all accessible
+      registers and verify readback. Results must be bit-exact.
+
+  SHARED_MEMORY:
+    # Shared memory probes write and read known patterns.
+    tolerance_mode: "exact"
+    max_ulp: 0
+    description: >
+      Shared memory integrity probes use address-as-data and walking-ones
+      patterns. Results must be bit-exact. Any deviation indicates a
+      shared memory bank fault.

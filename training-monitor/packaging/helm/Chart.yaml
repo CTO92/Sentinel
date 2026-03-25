@@ -1,0 +1,15 @@
+apiVersion: v2
+name: sentinel-training-monitor
+description: Sentinel Training Monitor - SDC detection plugin for GPU training loops
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - sentinel
+  - sdc
+  - gpu
+  - training
+  - monitoring
+maintainers:
+  - name: Sentinel Team
+dependencies: []

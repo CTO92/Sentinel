@@ -1,0 +1,31 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/sentinel-sdc/sentinel/gen/go
+plugins:
+  # Rust (prost + tonic)
+  - plugin: buf.build/community/neoeinstein-prost:v0.4.0
+    out: ../gen/rust/src
+    opt:
+      - compile_well_known_types
+      - extern_path=.google.protobuf=::pbjson_types
+  - plugin: buf.build/community/neoeinstein-tonic:v0.4.1
+    out: ../gen/rust/src
+    opt:
+      - compile_well_known_types
+      - extern_path=.google.protobuf=::pbjson_types
+
+  # Python (grpcio + mypy stubs)
+  - plugin: buf.build/grpc/python:v1.62.1
+    out: ../gen/python
+  - plugin: buf.build/protocolbuffers/python:v25.3
+    out: ../gen/python
+  - plugin: buf.build/community/nipunn1313-mypy:v3.6.0
+    out: ../gen/python
+
+  # C++ (grpc)
+  - plugin: buf.build/grpc/cpp:v1.62.1
+    out: ../gen/cpp
+  - plugin: buf.build/protocolbuffers/cpp:v25.3
+    out: ../gen/cpp

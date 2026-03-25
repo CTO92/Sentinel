@@ -1,0 +1,161 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Thermal sensor readings from a GPU.
+message ThermalReading {
+  // The GPU this reading is from.
+  GpuIdentifier gpu = 1;
+
+  // Current GPU die temperature in Celsius.
+  float temperature_c = 2;
+
+  // Fan speed as a percentage of maximum (0-100).
+  float fan_speed_pct = 3;
+
+  // Whether the GPU is currently thermal-throttling.
+  bool throttle_active = 4;
+
+  // Memory junction temperature in Celsius (HBM sensors).
+  float memory_temperature_c = 5;
+
+  // Timestamp of this reading.
+  google.protobuf.Timestamp timestamp = 6;
+}
+
+// Electrical power readings from a GPU.
+message PowerReading {
+  // The GPU this reading is from.
+  GpuIdentifier gpu = 1;
+
+  // Total board power draw in Watts.
+  float power_w = 2;
+
+  // GPU core voltage in millivolts.
+  uint32 voltage_mv = 3;
+
+  // GPU core current in milliamps.
+  uint32 current_ma = 4;
+
+  // Configured power limit in Watts.
+  float power_limit_w = 5;
+
+  // Whether power-limit throttling is active.
+  bool power_throttle_active = 6;
+
+  // Timestamp of this reading.
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// ECC memory error counters from a GPU.
+message EccCounters {
+  // The GPU this counter set is from.
+  GpuIdentifier gpu = 1;
+
+  // Single-bit (corrected) errors in SRAM (L1/L2/register file).
+  uint64 sram_corrected = 2;
+
+  // Double-bit (uncorrectable) errors in SRAM.
+  uint64 sram_uncorrected = 3;
+
+  // Single-bit (corrected) errors in DRAM (HBM).
+  uint64 dram_corrected = 4;
+
+  // Double-bit (uncorrectable) errors in DRAM.
+  uint64 dram_uncorrected = 5;
+
+  // Number of retired (bad) memory pages.
+  uint32 retired_pages = 6;
+
+  // Number of pending retired pages (will retire on next reset).
+  uint32 pending_retired_pages = 7;
+
+  // Whether a reset is required to retire pending pages.
+  bool reset_required = 8;
+
+  // Timestamp of this counter snapshot.
+  google.protobuf.Timestamp timestamp = 9;
+}
+
+// Aggregated telemetry report for a single GPU.
+message GpuTelemetryReport {
+  // Thermal readings.
+  ThermalReading thermal = 1;
+
+  // Power readings.
+  PowerReading power = 2;
+
+  // ECC error counters.
+  EccCounters ecc = 3;
+
+  // GPU compute utilization percentage (0-100).
+  float gpu_utilization_pct = 4;
+
+  // GPU memory bandwidth utilization percentage (0-100).
+  float memory_utilization_pct = 5;
+
+  // Current GPU core clock in MHz.
+  uint32 gpu_clock_mhz = 6;
+
+  // Current memory clock in MHz.
+  uint32 mem_clock_mhz = 7;
+
+  // PCIe link generation (e.g., 4, 5).
+  uint32 pcie_gen = 8;
+
+  // PCIe link width (e.g., 16).
+  uint32 pcie_width = 9;
+
+  // NVLink error counts (per link).
+  repeated NvLinkStatus nvlink_status = 10;
+}
+
+// Status of a single NVLink connection.
+message NvLinkStatus {
+  // NVLink index on this GPU.
+  uint32 link_index = 1;
+
+  // Whether the link is active.
+  bool active = 2;
+
+  // CRC error count on this link.
+  uint64 crc_errors = 3;
+
+  // Replay error count on this link.
+  uint64 replay_errors = 4;
+}
+
+// Batch of telemetry reports from a single host.
+message TelemetryBatch {
+  // Hostname of the reporting agent.
+  string agent_hostname = 1;
+
+  // One report per GPU on this host.
+  repeated GpuTelemetryReport reports = 2;
+
+  // Monotonically increasing sequence number.
+  uint64 sequence_number = 3;
+
+  // Timestamp when this batch was assembled.
+  google.protobuf.Timestamp batch_timestamp = 4;
+}
+
+// Acknowledgement for telemetry batches.
+message TelemetryAck {
+  // Sequence number being acknowledged.
+  uint64 sequence_number = 1;
+
+  // True if the batch was accepted.
+  bool accepted = 2;
+}
+
+// Streaming service for GPU telemetry ingestion.
+service TelemetryService {
+  // Agents stream telemetry reports; engine acknowledges receipt.
+  rpc StreamTelemetry(stream TelemetryBatch) returns (stream TelemetryAck);
+}

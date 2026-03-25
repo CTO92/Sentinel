@@ -1,0 +1,194 @@
+# =============================================================================
+# SENTINEL RBAC Configuration
+# =============================================================================
+
+# ServiceAccount for the Correlation Engine.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sentinel-correlation-engine
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: correlation-engine
+    app.kubernetes.io/part-of: sentinel-sdc
+automountServiceAccountToken: false
+
+---
+
+# ServiceAccount for the Audit Ledger.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sentinel-audit-ledger
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: audit-ledger
+    app.kubernetes.io/part-of: sentinel-sdc
+automountServiceAccountToken: false
+
+---
+
+# ServiceAccount for the Probe Agent (runs as a DaemonSet on GPU nodes).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sentinel-probe-agent
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: probe-agent
+    app.kubernetes.io/part-of: sentinel-sdc
+automountServiceAccountToken: false
+
+---
+
+# Role for the Correlation Engine: can read ConfigMaps and Secrets in its namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sentinel-correlation-engine
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: correlation-engine
+    app.kubernetes.io/part-of: sentinel-sdc
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["sentinel-tls", "sentinel-hmac-keys", "sentinel-db-credentials"]
+    verbs: ["get"]
+
+---
+
+# RoleBinding for the Correlation Engine.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentinel-correlation-engine
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: correlation-engine
+    app.kubernetes.io/part-of: sentinel-sdc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sentinel-correlation-engine
+subjects:
+  - kind: ServiceAccount
+    name: sentinel-correlation-engine
+    namespace: sentinel
+
+---
+
+# Role for the Audit Ledger: can read ConfigMaps and Secrets in its namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sentinel-audit-ledger
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: audit-ledger
+    app.kubernetes.io/part-of: sentinel-sdc
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["sentinel-tls", "sentinel-audit-db-credentials"]
+    verbs: ["get"]
+
+---
+
+# RoleBinding for the Audit Ledger.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentinel-audit-ledger
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: audit-ledger
+    app.kubernetes.io/part-of: sentinel-sdc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sentinel-audit-ledger
+subjects:
+  - kind: ServiceAccount
+    name: sentinel-audit-ledger
+    namespace: sentinel
+
+---
+
+# Role for the Probe Agent: can read ConfigMaps and Secrets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sentinel-probe-agent
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: probe-agent
+    app.kubernetes.io/part-of: sentinel-sdc
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["sentinel-tls", "sentinel-hmac-keys"]
+    verbs: ["get"]
+
+---
+
+# RoleBinding for the Probe Agent.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentinel-probe-agent
+  namespace: sentinel
+  labels:
+    app.kubernetes.io/name: probe-agent
+    app.kubernetes.io/part-of: sentinel-sdc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sentinel-probe-agent
+subjects:
+  - kind: ServiceAccount
+    name: sentinel-probe-agent
+    namespace: sentinel
+
+---
+
+# ClusterRole for the Probe Agent: needs to read node labels for GPU topology.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sentinel-probe-agent-node-reader
+  labels:
+    app.kubernetes.io/name: probe-agent
+    app.kubernetes.io/part-of: sentinel-sdc
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+
+---
+
+# ClusterRoleBinding for the Probe Agent node access.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sentinel-probe-agent-node-reader
+  labels:
+    app.kubernetes.io/name: probe-agent
+    app.kubernetes.io/part-of: sentinel-sdc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sentinel-probe-agent-node-reader
+subjects:
+  - kind: ServiceAccount
+    name: sentinel-probe-agent
+    namespace: sentinel

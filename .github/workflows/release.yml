@@ -1,0 +1,299 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  REPO: ${{ github.repository }}
+
+jobs:
+  validate-tag:
+    name: Validate Tag
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION"
+
+  build-probe-agent:
+    name: Build Probe Agent Image
+    needs: validate-tag
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: probe-agent/packaging/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO }}/probe-agent:${{ needs.validate-tag.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.REPO }}/probe-agent:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-inference-monitor:
+    name: Build Inference Monitor Image
+    needs: validate-tag
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: inference-monitor/packaging/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO }}/inference-monitor:${{ needs.validate-tag.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.REPO }}/inference-monitor:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-training-monitor:
+    name: Build Training Monitor Image
+    needs: validate-tag
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: training-monitor/packaging/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO }}/training-monitor:${{ needs.validate-tag.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.REPO }}/training-monitor:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-correlation-engine:
+    name: Build Correlation Engine Image
+    needs: validate-tag
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: correlation-engine/packaging/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO }}/correlation-engine:${{ needs.validate-tag.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.REPO }}/correlation-engine:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-audit-ledger:
+    name: Build Audit Ledger Image
+    needs: validate-tag
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: audit-ledger/packaging/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO }}/audit-ledger:${{ needs.validate-tag.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.REPO }}/audit-ledger:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish-python:
+    name: Publish Python Packages
+    needs: validate-tag
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build inference-monitor wheel
+        working-directory: inference-monitor
+        run: python -m build
+
+      - name: Build training-monitor wheel
+        working-directory: training-monitor
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          twine upload inference-monitor/dist/*
+          twine upload training-monitor/dist/*
+
+  publish-helm:
+    name: Publish Helm Charts
+    needs: validate-tag
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "3.14.0"
+
+      - name: Log in to OCI registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Package and push Helm charts
+        run: |
+          VERSION="${{ needs.validate-tag.outputs.version }}"
+          for chart in deploy/helm/*/; do
+            chart_name=$(basename "$chart")
+            helm package "$chart" --version "$VERSION" --app-version "$VERSION"
+            helm push "${chart_name}-${VERSION}.tgz" \
+              oci://${{ env.REGISTRY }}/${{ env.REPO }}/helm
+          done
+
+  create-release:
+    name: Create GitHub Release
+    needs:
+      - validate-tag
+      - build-probe-agent
+      - build-inference-monitor
+      - build-training-monitor
+      - build-correlation-engine
+      - build-audit-ledger
+      - publish-python
+      - publish-helm
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ needs.validate-tag.outputs.version }}"
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "${{ github.ref_name }}" | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            CHANGES=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGES=$(git log --pretty=format:"- %s (%h)" --no-merges -20)
+          fi
+          cat > release_notes.md << EOF
+          ## SENTINEL v${VERSION}
+
+          ### Container Images
+
+          | Component | Image |
+          |-----------|-------|
+          | Probe Agent | \`${{ env.REGISTRY }}/${{ env.REPO }}/probe-agent:${VERSION}\` |
+          | Inference Monitor | \`${{ env.REGISTRY }}/${{ env.REPO }}/inference-monitor:${VERSION}\` |
+          | Training Monitor | \`${{ env.REGISTRY }}/${{ env.REPO }}/training-monitor:${VERSION}\` |
+          | Correlation Engine | \`${{ env.REGISTRY }}/${{ env.REPO }}/correlation-engine:${VERSION}\` |
+          | Audit Ledger | \`${{ env.REGISTRY }}/${{ env.REPO }}/audit-ledger:${VERSION}\` |
+
+          ### Python Packages
+
+          \`\`\`bash
+          pip install sentinel-inference-monitor==${VERSION}
+          pip install sentinel-training-monitor==${VERSION}
+          \`\`\`
+
+          ### Helm Charts
+
+          \`\`\`bash
+          helm install sentinel oci://${{ env.REGISTRY }}/${{ env.REPO }}/helm/sentinel --version ${VERSION}
+          \`\`\`
+
+          ### Changes
+
+          ${CHANGES}
+          EOF
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          generate_release_notes: true

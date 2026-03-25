@@ -1,0 +1,322 @@
+# =============================================================================
+# SENTINEL Alert Rules
+# =============================================================================
+# Maps events and conditions to severity levels and notification channels.
+
+rules:
+  # ---- Probe-Related Alerts ----
+
+  - name: "probe_single_failure"
+    description: "A single probe execution failed on a GPU."
+    condition:
+      event_type: "probe_result"
+      result: "FAIL"
+    severity: WARNING
+    channels:
+      - slack
+    cooldown_seconds: 300
+    group_by: "gpu_uuid"
+
+  - name: "probe_consecutive_failures"
+    description: "Multiple consecutive probe failures on the same GPU."
+    condition:
+      event_type: "probe_result"
+      result: "FAIL"
+      consecutive_count: 3
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 60
+    group_by: "gpu_uuid"
+
+  - name: "probe_multi_sm_failure"
+    description: "Probe failures on multiple SMs of the same GPU within a time window."
+    condition:
+      event_type: "probe_result"
+      result: "FAIL"
+      distinct_sms: 3
+      window_seconds: 600
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  - name: "probe_timeout"
+    description: "A probe execution timed out."
+    condition:
+      event_type: "probe_result"
+      result: "TIMEOUT"
+    severity: WARNING
+    channels:
+      - slack
+    cooldown_seconds: 600
+    group_by: "gpu_uuid"
+
+  # ---- Anomaly-Related Alerts ----
+
+  - name: "inference_anomaly_warning"
+    description: "Inference monitor detected a low-severity anomaly."
+    condition:
+      event_type: "anomaly"
+      source: "INFERENCE_MONITOR"
+      min_severity: WARNING
+      max_severity: WARNING
+    severity: WARNING
+    channels:
+      - slack
+    cooldown_seconds: 600
+    group_by: "gpu_uuid"
+
+  - name: "inference_anomaly_high"
+    description: "Inference monitor detected a high-severity anomaly."
+    condition:
+      event_type: "anomaly"
+      source: "INFERENCE_MONITOR"
+      min_severity: HIGH
+      max_severity: HIGH
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 120
+    group_by: "gpu_uuid"
+
+  - name: "inference_anomaly_critical"
+    description: "Inference monitor detected a critical anomaly."
+    condition:
+      event_type: "anomaly"
+      source: "INFERENCE_MONITOR"
+      min_severity: CRITICAL
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  - name: "training_anomaly_gradient_spike"
+    description: "Training monitor detected a gradient norm spike."
+    condition:
+      event_type: "anomaly"
+      anomaly_type: "GRADIENT_NORM_SPIKE"
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 120
+    group_by: "gpu_uuid"
+
+  - name: "training_anomaly_cross_rank"
+    description: "Cross-rank divergence detected during training."
+    condition:
+      event_type: "anomaly"
+      anomaly_type: "CROSS_RANK_DIVERGENCE"
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  - name: "training_anomaly_loss_spike"
+    description: "Training loss spike detected."
+    condition:
+      event_type: "anomaly"
+      anomaly_type: "LOSS_SPIKE"
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 300
+    group_by: "gpu_uuid"
+
+  - name: "invariant_violation"
+    description: "A mathematical invariant was violated."
+    condition:
+      event_type: "anomaly"
+      anomaly_type: "INVARIANT_VIOLATION"
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  # ---- Quarantine-Related Alerts ----
+
+  - name: "gpu_quarantined"
+    description: "A GPU has been quarantined."
+    condition:
+      event_type: "quarantine"
+      action: "QUARANTINE"
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  - name: "gpu_condemned"
+    description: "A GPU has been condemned and requires hardware replacement."
+    condition:
+      event_type: "quarantine"
+      action: "CONDEMN"
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  - name: "gpu_reinstated"
+    description: "A GPU has been reinstated to production."
+    condition:
+      event_type: "quarantine"
+      action: "REINSTATE"
+    severity: INFO
+    channels:
+      - slack
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  # ---- Correlation-Related Alerts ----
+
+  - name: "high_confidence_correlation"
+    description: "Correlation engine identified a high-confidence SDC pattern."
+    condition:
+      event_type: "correlation"
+      min_confidence: 0.8
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 120
+    group_by: "gpu_uuid"
+
+  - name: "node_correlated_failures"
+    description: "Multiple GPUs on the same node showing correlated failures."
+    condition:
+      event_type: "correlation"
+      pattern_type: "NODE_CORRELATED"
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "hostname"
+
+  # ---- TMR-Related Alerts ----
+
+  - name: "tmr_dissent"
+    description: "A GPU dissented during TMR canary comparison."
+    condition:
+      event_type: "tmr_result"
+      unanimous: false
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 120
+    group_by: "gpu_uuid"
+
+  # ---- Telemetry-Related Alerts ----
+
+  - name: "gpu_thermal_throttle"
+    description: "GPU is thermal throttling."
+    condition:
+      event_type: "telemetry"
+      thermal_throttle: true
+    severity: WARNING
+    channels:
+      - slack
+    cooldown_seconds: 600
+    group_by: "gpu_uuid"
+
+  - name: "gpu_ecc_uncorrected"
+    description: "GPU reported uncorrectable ECC errors."
+    condition:
+      event_type: "telemetry"
+      ecc_uncorrected_gt: 0
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "gpu_uuid"
+
+  - name: "gpu_retired_pages"
+    description: "GPU has retired memory pages."
+    condition:
+      event_type: "telemetry"
+      retired_pages_gt: 0
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 3600
+    group_by: "gpu_uuid"
+
+  # ---- Audit-Related Alerts ----
+
+  - name: "audit_chain_broken"
+    description: "Audit ledger hash chain integrity verification failed."
+    condition:
+      event_type: "audit_verification"
+      valid: false
+    severity: CRITICAL
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 0
+    group_by: "cluster"
+
+  # ---- System-Level Alerts ----
+
+  - name: "agent_heartbeat_lost"
+    description: "A probe agent has stopped reporting."
+    condition:
+      event_type: "system"
+      sub_type: "heartbeat_timeout"
+      timeout_seconds: 120
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+    cooldown_seconds: 300
+    group_by: "hostname"
+
+  - name: "fleet_sdc_rate_elevated"
+    description: "Fleet-wide SDC detection rate has exceeded baseline."
+    condition:
+      event_type: "fleet_health"
+      sdc_rate_gt: 0.001
+    severity: HIGH
+    channels:
+      - slack
+      - pagerduty
+      - email
+    cooldown_seconds: 1800
+    group_by: "cluster"
+
+# Global alert settings.
+global:
+  # Default cooldown between repeated alerts of the same type and group.
+  default_cooldown_seconds: 300
+  # Maximum number of alerts per minute across all rules (rate limiting).
+  max_alerts_per_minute: 60
+  # Whether to aggregate alerts of the same type into a single notification.
+  aggregate_similar: true
+  # Aggregation window (seconds).
+  aggregation_window_seconds: 60

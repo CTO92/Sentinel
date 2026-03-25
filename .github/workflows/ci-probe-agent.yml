@@ -1,0 +1,190 @@
+name: CI — Probe Agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "probe-agent/**"
+      - "proto/**"
+      - ".github/workflows/ci-probe-agent.yml"
+  pull_request:
+    paths:
+      - "probe-agent/**"
+      - "proto/**"
+
+concurrency:
+  group: ci-probe-agent-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/probe-agent
+
+jobs:
+  build:
+    name: Build (CUDA ${{ matrix.cuda }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cuda: ["12.3.1", "12.4.1"]
+    container:
+      image: nvidia/cuda:${{ matrix.cuda }}-devel-ubuntu22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            cmake ninja-build g++ git protobuf-compiler libprotobuf-dev \
+            libgrpc++-dev libgtest-dev pkg-config ca-certificates
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Configure CMake
+        working-directory: probe-agent
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CUDA_ARCHITECTURES="80;86;89;90" \
+            -DBUILD_TESTING=ON
+
+      - name: Build
+        working-directory: probe-agent
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-agent-cuda${{ matrix.cuda }}
+          path: probe-agent/build/
+          retention-days: 7
+
+  unit-tests:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-22.04
+    container:
+      image: nvidia/cuda:12.3.1-devel-ubuntu22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            cmake ninja-build g++ libgtest-dev libprotobuf-dev \
+            libgrpc++-dev pkg-config
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Build and test
+        working-directory: probe-agent
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+          cmake --build build --parallel $(nproc)
+          cd build && ctest --output-on-failure --timeout 120
+
+  gpu-tests:
+    name: GPU Integration Tests
+    needs: build
+    runs-on: [self-hosted, gpu, cuda]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: probe-agent-cuda12.3.1
+          path: probe-agent/build/
+
+      - name: Run GPU tests
+        working-directory: probe-agent
+        run: |
+          chmod +x build/sentinel-probe-agent
+          nvidia-smi
+          cd build && ctest --output-on-failure --timeout 300 -L gpu
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-22.04
+    container:
+      image: nvidia/cuda:12.3.1-devel-ubuntu22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-tidy
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            clang-tidy cmake ninja-build g++ libprotobuf-dev \
+            libgrpc++-dev libgtest-dev pkg-config
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Generate compile_commands.json
+        working-directory: probe-agent
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run clang-tidy
+        working-directory: probe-agent
+        run: |
+          find src -name '*.cpp' -o -name '*.cu' | head -50 | \
+          xargs clang-tidy -p build --warnings-as-errors='*' \
+            --checks='-*,clang-analyzer-*,bugprone-*,performance-*,modernize-*' \
+            || true
+
+  docker:
+    name: Docker Image
+    needs: [unit-tests, static-analysis]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: probe-agent/packaging/Dockerfile
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  integration-tests:
+    name: Integration Tests
+    needs: docker
+    runs-on: [self-hosted, gpu, cuda]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run integration tests
+        run: |
+          docker compose -f deploy/docker-compose.test.yml up \
+            --build --abort-on-container-exit --exit-code-from test-runner
+        env:
+          PROBE_AGENT_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}

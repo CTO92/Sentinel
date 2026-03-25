@@ -1,0 +1,31 @@
+# SENTINEL Fleet Simulator — Single GPU Degradation Scenario
+#
+# 100 GPUs total. GPU index 42 begins degrading after 2 hours and transitions
+# to faulty after 12 hours. The remaining 99 GPUs stay healthy.
+# Tests SENTINEL's ability to detect gradual single-GPU degradation.
+
+simulation:
+  fleet_size: 100
+  duration_seconds: 86400       # 24 hours
+  telemetry_interval_s: 10
+  probe_interval_s: 30
+  sdc_rate: 0.0                 # Healthy GPUs have zero SDC rate
+  gpus_per_node: 8              # 13 nodes
+  seed: 123
+
+  degrading_gpus:
+    - gpu_index: 42
+      sdc_rate: 0.001           # 0.1% chance per probe initially
+      degradation_start_s: 7200       # Start degrading at 2 hours
+      degradation_duration_s: 86400   # Full degradation over 24 hours
+
+  correlated_groups: []
+
+# Expected outcomes:
+#   - GPU 42 begins producing probe failures around t=2h
+#   - Failure rate increases over time
+#   - SENTINEL probe agent detects first failure within 30s of first SDC
+#   - Correlation engine flags GPU 42 as degrading within 10 minutes
+#   - Temperature on GPU 42 rises above fleet average after 12h
+#   - ECC error counts accumulate on GPU 42
+#   - No false positives on the other 99 GPUs

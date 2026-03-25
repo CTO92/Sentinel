@@ -1,0 +1,106 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Actions that can be taken on a GPU's lifecycle state.
+enum QuarantineAction {
+  QUARANTINE_ACTION_UNSPECIFIED = 0;
+
+  // Remove GPU from production workloads and place under investigation.
+  QUARANTINE_ACTION_QUARANTINE = 1;
+
+  // Return a previously quarantined GPU to production.
+  QUARANTINE_ACTION_REINSTATE = 2;
+
+  // Permanently mark GPU as unreliable; schedule for hardware replacement.
+  QUARANTINE_ACTION_CONDEMN = 3;
+
+  // Initiate a comprehensive deep-diagnostic test suite on the GPU.
+  QUARANTINE_ACTION_SCHEDULE_DEEP_TEST = 4;
+}
+
+// A directive to change a GPU's lifecycle state.
+message QuarantineDirective {
+  // Unique identifier for this directive (UUID v7).
+  string directive_id = 1;
+
+  // The GPU to act upon.
+  GpuIdentifier gpu = 2;
+
+  // The action to take.
+  QuarantineAction action = 3;
+
+  // Human-readable reason for this action.
+  string reason = 4;
+
+  // Who or what initiated this directive (e.g., "correlation-engine", "operator:jane").
+  string initiated_by = 5;
+
+  // References to supporting evidence (event IDs, probe execution IDs, etc.).
+  repeated string evidence = 6;
+
+  // When this directive was issued.
+  google.protobuf.Timestamp timestamp = 7;
+
+  // Priority of this directive (lower number = higher priority).
+  uint32 priority = 8;
+
+  // Whether this directive requires human approval before execution.
+  bool requires_approval = 9;
+
+  // Approval status (populated after human review, if required).
+  ApprovalStatus approval = 10;
+}
+
+// Approval tracking for directives that require human sign-off.
+message ApprovalStatus {
+  // Whether the directive has been approved.
+  bool approved = 1;
+
+  // Who approved or rejected it.
+  string reviewer = 2;
+
+  // When the review decision was made.
+  google.protobuf.Timestamp review_time = 3;
+
+  // Optional comment from the reviewer.
+  string comment = 4;
+}
+
+// Response to a directive issuance.
+message DirectiveResponse {
+  // The directive ID that was processed.
+  string directive_id = 1;
+
+  // Whether the directive was accepted for execution.
+  bool accepted = 2;
+
+  // Reason if not accepted (e.g., GPU already in requested state).
+  string rejection_reason = 3;
+
+  // The resulting GPU state after applying the directive.
+  string resulting_state = 4;
+}
+
+// Subscription filter for streaming directives.
+message DirectiveSubscription {
+  // Filter by hostname (empty = all hosts).
+  string hostname_filter = 1;
+
+  // Filter by action type (UNSPECIFIED = all actions).
+  QuarantineAction action_filter = 2;
+}
+
+// Service for managing GPU quarantine lifecycle.
+service QuarantineService {
+  // Issue a quarantine directive (unary).
+  rpc IssueDirective(QuarantineDirective) returns (DirectiveResponse);
+
+  // Subscribe to a stream of quarantine directives (for orchestrators/agents).
+  rpc StreamDirectives(DirectiveSubscription) returns (stream QuarantineDirective);
+}

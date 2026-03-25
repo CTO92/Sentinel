@@ -1,0 +1,181 @@
+syntax = "proto3";
+package sentinel.v1;
+
+import "google/protobuf/timestamp.proto";
+import "sentinel/v1/common.proto";
+
+option java_multiple_files = true;
+option java_package = "com.sentinel.v1";
+
+// Types of entries that can appear in the audit ledger.
+enum AuditEntryType {
+  AUDIT_ENTRY_TYPE_UNSPECIFIED = 0;
+
+  // A probe execution result.
+  AUDIT_ENTRY_TYPE_PROBE_RESULT = 1;
+
+  // An anomaly detection event.
+  AUDIT_ENTRY_TYPE_ANOMALY_EVENT = 2;
+
+  // A quarantine lifecycle action.
+  AUDIT_ENTRY_TYPE_QUARANTINE_ACTION = 3;
+
+  // A configuration change.
+  AUDIT_ENTRY_TYPE_CONFIG_CHANGE = 4;
+
+  // A TMR canary result.
+  AUDIT_ENTRY_TYPE_TMR_RESULT = 5;
+
+  // A system-level event (startup, shutdown, error, etc.).
+  AUDIT_ENTRY_TYPE_SYSTEM_EVENT = 6;
+}
+
+// A single entry in the tamper-evident audit ledger.
+// Entries form a hash chain: entry_hash = H(entry_id || entry_type || timestamp || gpu || data || previous_hash).
+message AuditEntry {
+  // Monotonically increasing sequence number (globally unique within the ledger).
+  uint64 entry_id = 1;
+
+  // Classification of this entry.
+  AuditEntryType entry_type = 2;
+
+  // When this entry was recorded.
+  google.protobuf.Timestamp timestamp = 3;
+
+  // GPU associated with this entry (may be absent for system events).
+  GpuIdentifier gpu = 4;
+
+  // Serialized protobuf of the underlying event (ProbeExecution, AnomalyEvent, etc.).
+  bytes data = 5;
+
+  // Hash of the immediately preceding entry in the chain.
+  // For the genesis entry, this is 32 zero bytes.
+  bytes previous_hash = 6;
+
+  // SHA-256 hash of this entry (computed over fields 1-6).
+  bytes entry_hash = 7;
+
+  // Merkle root of the batch containing this entry.
+  // Populated only for the last entry in each batch; otherwise empty.
+  bytes merkle_root = 8;
+}
+
+// A batch of audit entries committed atomically.
+message AuditBatch {
+  // Ordered entries in this batch.
+  repeated AuditEntry entries = 1;
+
+  // Monotonically increasing batch sequence number.
+  uint64 batch_sequence = 2;
+
+  // Merkle root computed over all entry hashes in this batch.
+  bytes batch_merkle_root = 3;
+
+  // Timestamp when the batch was sealed.
+  google.protobuf.Timestamp batch_timestamp = 4;
+
+  // Number of entries in this batch.
+  uint32 entry_count = 5;
+}
+
+// Request to verify the integrity of the audit chain.
+message ChainVerificationRequest {
+  // Starting entry ID for verification (0 = from genesis).
+  uint64 start_entry_id = 1;
+
+  // Ending entry ID (0 = through latest).
+  uint64 end_entry_id = 2;
+
+  // Whether to also verify Merkle roots of batches within the range.
+  bool verify_merkle_roots = 3;
+}
+
+// Response from chain verification.
+message ChainVerificationResponse {
+  // Whether the chain is valid over the requested range.
+  bool valid = 1;
+
+  // If invalid, the entry ID where the first break was detected.
+  uint64 first_invalid_entry_id = 2;
+
+  // Description of the verification failure (if any).
+  string failure_description = 3;
+
+  // Total entries verified.
+  uint64 entries_verified = 4;
+
+  // Total batches verified (if merkle verification was requested).
+  uint64 batches_verified = 5;
+
+  // Time taken to perform the verification in milliseconds.
+  uint64 verification_time_ms = 6;
+}
+
+// Request to query the audit trail.
+message AuditQueryRequest {
+  // Filter by GPU (optional).
+  GpuIdentifier gpu = 1;
+
+  // Filter by time range start (optional).
+  google.protobuf.Timestamp start_time = 2;
+
+  // Filter by time range end (optional).
+  google.protobuf.Timestamp end_time = 3;
+
+  // Filter by entry type (UNSPECIFIED = all types).
+  AuditEntryType entry_type = 4;
+
+  // Maximum number of entries to return.
+  uint32 limit = 5;
+
+  // Pagination token for subsequent requests.
+  string page_token = 6;
+
+  // Sort order: true = newest first, false = oldest first.
+  bool descending = 7;
+}
+
+// Response from an audit trail query.
+message AuditQueryResponse {
+  // Matching audit entries.
+  repeated AuditEntry entries = 1;
+
+  // Pagination token for the next page (empty if no more results).
+  string next_page_token = 2;
+
+  // Total number of matching entries (may be approximate for large ranges).
+  uint64 total_count = 3;
+}
+
+// Request to ingest events into the audit ledger.
+message AuditIngestRequest {
+  // Events to append to the ledger (will be assigned entry IDs and hashed).
+  repeated AuditEntry entries = 1;
+}
+
+// Response from ingesting events.
+message AuditIngestResponse {
+  // Whether all events were successfully ingested.
+  bool success = 1;
+
+  // Number of entries ingested.
+  uint32 entries_ingested = 2;
+
+  // The entry ID of the last ingested entry.
+  uint64 last_entry_id = 3;
+
+  // Error description if not all events were ingested.
+  string error = 4;
+}
+
+// Service for the tamper-evident audit ledger.
+service AuditService {
+  // Append events to the audit ledger.
+  rpc IngestEvents(AuditIngestRequest) returns (AuditIngestResponse);
+
+  // Verify the integrity of the hash chain and Merkle tree.
+  rpc VerifyChain(ChainVerificationRequest) returns (ChainVerificationResponse);
+
+  // Query the audit trail with filtering and pagination.
+  rpc QueryAuditTrail(AuditQueryRequest) returns (AuditQueryResponse);
+}

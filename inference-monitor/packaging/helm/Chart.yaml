@@ -1,0 +1,23 @@
+apiVersion: v2
+name: sentinel-inference-monitor
+description: >-
+  SENTINEL Inference Monitor sidecar for detecting Silent Data Corruption
+  in GPU inference servers. Deploys as a sidecar container alongside
+  inference server pods.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - sentinel
+  - sdc
+  - silent-data-corruption
+  - gpu
+  - inference
+  - monitoring
+  - sidecar
+maintainers:
+  - name: SENTINEL Team
+home: https://github.com/sentinel-project/sentinel
+sources:
+  - https://github.com/sentinel-project/sentinel
+dependencies: []

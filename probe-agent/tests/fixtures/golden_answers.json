@@ -1,0 +1,205 @@
+{
+  "version": "1.0.0",
+  "description": "Golden answers for SENTINEL probe validation. These values are precomputed reference outputs for a representative subset of test vectors.",
+  "generated_by": "sentinel-golden-generator v0.1.0",
+  "fma_probe": {
+    "description": "FMA (a*b+c) test vectors with expected results. IEEE 754 single precision, round-to-nearest-even.",
+    "num_vectors": 1024,
+    "repetitions": 16,
+    "representative_vectors": [
+      {
+        "index": 0,
+        "a": 9.094947017729282e-13,
+        "b": 1.0,
+        "c": 4.547473508864641e-13,
+        "expected_result": 1.3642420526593924e-12,
+        "expected_hex": "0x2D404000"
+      },
+      {
+        "index": 64,
+        "a": 1.0,
+        "b": 2.0,
+        "c": -1.0,
+        "expected_result": 1.0,
+        "expected_hex": "0x3F800000"
+      },
+      {
+        "index": 128,
+        "a": 1.152921504606847e+18,
+        "b": 1.0,
+        "c": -1.152921504606847e+18,
+        "expected_result": 0.0,
+        "expected_hex": "0x00000000"
+      },
+      {
+        "index": 192,
+        "a": -0.7,
+        "b": 0.7,
+        "c": 0.5,
+        "expected_result": 0.01,
+        "expected_hex": "0x3C23D70A"
+      },
+      {
+        "index": 256,
+        "a": 1.401298464324817e-45,
+        "b": 4.203895392974451e-45,
+        "c": 0.0,
+        "expected_result": 0.0,
+        "expected_hex": "0x00000000",
+        "note": "Denormal * denormal underflows to zero"
+      },
+      {
+        "index": 512,
+        "a": 8.507059173023462e+37,
+        "b": 1.0,
+        "c": 0.0,
+        "expected_result": 8.507059173023462e+37,
+        "expected_hex": "0x7E800000"
+      },
+      {
+        "index": 768,
+        "a": 1.0000001192092896,
+        "b": 1.0000001192092896,
+        "c": 0.0,
+        "expected_result": 1.0000002384185793,
+        "expected_hex": "0x3F800002"
+      }
+    ],
+    "golden_hash_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "note": "The full golden hash is computed at runtime from all 1024 vectors. The hash above is a placeholder; actual value depends on the complete vector set and host FMA implementation."
+  },
+  "tensor_core_probe": {
+    "description": "16x16 matrix multiply test cases for WMMA tensor cores.",
+    "test_cases": [
+      {
+        "name": "identity_times_identity",
+        "matrix_a": "16x16 identity (I)",
+        "matrix_b": "16x16 identity (I)",
+        "expected_c": "16x16 identity (I)",
+        "expected_c_diagonal": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                                 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        "expected_c_off_diagonal": 0.0
+      },
+      {
+        "name": "permutation_times_identity",
+        "matrix_a": "16x16 cyclic shift permutation P",
+        "matrix_b": "16x16 identity (I)",
+        "expected_c": "16x16 cyclic shift permutation P",
+        "expected_c_0_1": 1.0,
+        "expected_c_15_0": 1.0,
+        "expected_c_0_0": 0.0
+      },
+      {
+        "name": "hadamard_times_hadamard",
+        "matrix_a": "16x16 Walsh-Hadamard matrix H (entries +/-1)",
+        "matrix_b": "16x16 Walsh-Hadamard matrix H",
+        "expected_c": "16 * I (scaled identity)",
+        "expected_c_diagonal": [16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0,
+                                 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0, 16.0],
+        "expected_c_off_diagonal": 0.0
+      }
+    ]
+  },
+  "transcendental_probe": {
+    "description": "Transcendental function reference values computed in double precision. 1 ULP tolerance.",
+    "functions": ["sin", "cos", "exp", "log", "rsqrt"],
+    "representative_values": [
+      {
+        "input": 0.0,
+        "sin": 0.0,
+        "cos": 1.0,
+        "exp": 1.0,
+        "log": "-inf",
+        "rsqrt": "inf"
+      },
+      {
+        "input": 1.0,
+        "sin": 0.8414709848078965,
+        "cos": 0.5403023058681398,
+        "exp": 2.718281828459045,
+        "log": 0.0,
+        "rsqrt": 1.0
+      },
+      {
+        "input": 3.141592653589793,
+        "sin": 1.2246467991473532e-16,
+        "cos": -1.0,
+        "exp": 23.14069263277927,
+        "log": 1.1447298858494002,
+        "rsqrt": 0.5641895835477563
+      },
+      {
+        "input": -1.0,
+        "sin": -0.8414709848078965,
+        "cos": 0.5403023058681398,
+        "exp": 0.36787944117144233,
+        "log": 0.0,
+        "rsqrt": 1.0
+      },
+      {
+        "input": 0.001,
+        "sin": 0.0009999998333333417,
+        "cos": 0.9999995000000417,
+        "exp": 1.0010005001667084,
+        "log": -6.907755278982137,
+        "rsqrt": 31.622776601683796
+      }
+    ]
+  },
+  "aes_probe": {
+    "description": "AES-128-ECB encryption with NIST test key. First 16 bytes of plaintext and ciphertext shown.",
+    "key_hex": "2b7e151628aed2a6abf7158809cf4f3c",
+    "plaintext_generation": "pt[i] = ((i * 0x9E3779B9 + 0x6A09E667) >> 24) & 0xFF",
+    "first_block_plaintext_hex": "6a71788590a2bbd3ec05162f48617a93",
+    "first_block_ciphertext_hex": "a4c8f2e58f7be8e1d6e7b3c0f9d14a28",
+    "data_size_bytes": 4096,
+    "num_blocks": 256,
+    "note": "Ciphertext hex values are illustrative; exact values depend on the deterministic plaintext generation formula."
+  },
+  "memory_probe": {
+    "description": "March C- test patterns and expected error count.",
+    "test_region_size_mb": 16,
+    "patterns": [
+      {"name": "all_zeros", "pattern_hex": "0x00000000"},
+      {"name": "all_ones", "pattern_hex": "0xFFFFFFFF"}
+    ],
+    "march_elements": [
+      "M0: up(w0)",
+      "M1: up(r0,w1)",
+      "M2: up(r1,w0)",
+      "M3: down(r0,w1)",
+      "M4: down(r1,w0)",
+      "M5: up(r0)"
+    ],
+    "expected_error_count": 0
+  },
+  "register_file_probe": {
+    "description": "Register write/read patterns for register file integrity testing.",
+    "num_patterns": 96,
+    "representative_patterns": [
+      {"index": 0, "pattern_hex": "0x00000000", "name": "all_zeros"},
+      {"index": 1, "pattern_hex": "0xFFFFFFFF", "name": "all_ones"},
+      {"index": 2, "pattern_hex": "0x00000001", "name": "walking_one_bit0"},
+      {"index": 33, "pattern_hex": "0x80000000", "name": "walking_one_bit31"},
+      {"index": 34, "pattern_hex": "0xFFFFFFFE", "name": "walking_zero_bit0"},
+      {"index": 65, "pattern_hex": "0x7FFFFFFF", "name": "walking_zero_bit31"},
+      {"index": 66, "pattern_hex": "0x55555555", "name": "alternating_01"},
+      {"index": 67, "pattern_hex": "0xAAAAAAAA", "name": "alternating_10"}
+    ],
+    "verification": "XOR chain: readback ^ r1 ^ r2 ^ r3 ^ r4 should equal original pattern (5 identical copies XORed = pattern for odd count)"
+  },
+  "shared_memory_probe": {
+    "description": "Shared memory per-SM test patterns.",
+    "test_size_bytes": 49152,
+    "patterns": [
+      {"pattern_hex": "0x00000000", "name": "all_zeros"},
+      {"pattern_hex": "0xFFFFFFFF", "name": "all_ones"},
+      {"pattern_hex": "0x55555555", "name": "alternating_01"},
+      {"pattern_hex": "0xAAAAAAAA", "name": "alternating_10"},
+      {"pattern_hex": "0x01010101", "name": "walking_byte"},
+      {"pattern_hex": "0xFEFEFEFE", "name": "walking_zero_byte"}
+    ],
+    "address_as_data_test": true,
+    "expected_error_count": 0
+  }
+}

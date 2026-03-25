@@ -1,0 +1,43 @@
+[package]
+name = "sentinel-audit-ledger"
+version = "0.1.0"
+edition = "2021"
+description = "SENTINEL Audit Ledger — immutable, verifiable record of all SENTINEL events"
+license = "Apache-2.0"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+tonic = "0.11"
+prost = "0.12"
+sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid"] }
+sha2 = "0.10"
+hmac = "0.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+prometheus = "0.13"
+tera = "1"
+anyhow = "1"
+thiserror = "1"
+config = { version = "0.14", features = ["yaml"] }
+hex = "0.4"
+base64 = { version = "0.22", features = ["std"] }
+csv = "1"
+lazy_static = "1"
+subtle = "2"
+async-stream = "0.3"
+tokio-stream = "0.1"
+http = "1"
+http-body = "1"
+http-body-util = "0.1"
+bytes = "1"
+
+[build-dependencies]
+tonic-build = "0.11"
+
+[dev-dependencies]
+tempfile = "3"
+tokio-test = "0.4"
