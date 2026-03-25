@@ -10,7 +10,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#ifndef __CUDACC__
 #include <span>
+#endif
 #include <string>
 #include <string_view>
 
@@ -29,8 +31,10 @@ using Sha256Digest = std::array<uint8_t, kSha256DigestLen>;
 /// @return      The 32-byte SHA-256 digest.
 [[nodiscard]] Sha256Digest sha256(const void* data, std::size_t len);
 
+#ifndef __CUDACC__
 /// Compute SHA-256 over a span of bytes.
 [[nodiscard]] Sha256Digest sha256(std::span<const uint8_t> data);
+#endif
 
 /// Incremental SHA-256 hasher for computing digests over multiple buffers
 /// (e.g., streaming probe output).
@@ -47,8 +51,10 @@ public:
     /// Feed data into the hash computation.
     void update(const void* data, std::size_t len);
 
+#ifndef __CUDACC__
     /// Feed a span of bytes.
     void update(std::span<const uint8_t> data);
+#endif
 
     /// Finalize and return the digest. The hasher is consumed; further
     /// update() calls are undefined behavior.
@@ -64,12 +70,14 @@ private:
 /// @param key   HMAC key bytes.
 /// @param data  Message to authenticate.
 /// @return      The 32-byte HMAC-SHA256 tag.
+#ifndef __CUDACC__
 [[nodiscard]] Sha256Digest hmac_sha256(std::span<const uint8_t> key,
                                         std::span<const uint8_t> data);
 
 /// Convenience overload for string key and data.
 [[nodiscard]] Sha256Digest hmac_sha256(std::string_view key,
                                         std::span<const uint8_t> data);
+#endif
 
 /// Constant-time comparison of two digests.
 [[nodiscard]] bool digest_equal(const Sha256Digest& a, const Sha256Digest& b);
