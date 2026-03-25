@@ -7,6 +7,8 @@
 #include "agent/agent.h"
 #include "util/logging.h"
 
+#include <cuda_runtime.h>
+
 #include <atomic>
 #include <csignal>
 #include <cstdlib>
@@ -50,8 +52,8 @@ void print_usage(const char* argv0) {
 
 void print_version() {
     std::cout << "sentinel-probe-agent v0.1.0\n"
-              << "Built with CUDA " << __CUDACC_VER_MAJOR__ << "."
-              << __CUDACC_VER_MINOR__ << "\n"
+              << "Built with CUDA " << CUDART_VERSION / 1000 << "."
+              << (CUDART_VERSION % 1000) / 10 << "\n"
               << "C++ standard: " << __cplusplus << "\n"
               << std::endl;
 }
