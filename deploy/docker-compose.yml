@@ -10,8 +10,8 @@ services:
   correlation-engine:
     image: sentinel/correlation-engine:latest
     build:
-      context: ../correlation-engine
-      dockerfile: packaging/Dockerfile
+      context: ..
+      dockerfile: correlation-engine/packaging/Dockerfile
     container_name: sentinel-correlation-engine
     restart: unless-stopped
     environment:
@@ -54,8 +54,8 @@ services:
   audit-ledger:
     image: sentinel/audit-ledger:latest
     build:
-      context: ../audit-ledger
-      dockerfile: packaging/Dockerfile
+      context: ..
+      dockerfile: audit-ledger/packaging/Dockerfile
     container_name: sentinel-audit-ledger
     restart: unless-stopped
     environment:

@@ -13,7 +13,7 @@ use std::collections::HashMap;
 
 use anyhow::{Context, Result};
 use serde::de::DeserializeOwned;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 use crate::correlation::bayesian_attribution::BayesianBelief;
 use crate::health::quarantine::GpuStateRecord;

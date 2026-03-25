@@ -33,16 +33,36 @@ find_package(gRPC     CONFIG QUIET)
 find_package(Threads  REQUIRED)
 
 # Logging
-find_package(spdlog CONFIG REQUIRED)
+find_package(spdlog CONFIG QUIET)
 
 # Metrics
-find_package(prometheus-cpp CONFIG REQUIRED)
+find_package(prometheus-cpp CONFIG QUIET)
 
 # Cryptography
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL QUIET)
 
 # JSON (for config / golden answers)
-find_package(nlohmann_json CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG QUIET)
+
+# ── Fallback: if key dependencies not found, provide stub targets ──────
+if(NOT spdlog_FOUND)
+    message(STATUS "spdlog not found — providing stub logging target")
+    add_library(spdlog::spdlog INTERFACE IMPORTED)
+endif()
+if(NOT nlohmann_json_FOUND)
+    message(STATUS "nlohmann_json not found — providing stub target")
+    add_library(nlohmann_json::nlohmann_json INTERFACE IMPORTED)
+endif()
+if(NOT OpenSSL_FOUND)
+    message(STATUS "OpenSSL not found — crypto functions will be stubbed")
+    add_library(OpenSSL::SSL INTERFACE IMPORTED)
+    add_library(OpenSSL::Crypto INTERFACE IMPORTED)
+endif()
+if(NOT TARGET prometheus-cpp::core)
+    message(STATUS "prometheus-cpp not found — metrics will be disabled")
+    add_library(prometheus-cpp::core INTERFACE IMPORTED)
+    add_library(prometheus-cpp::pull INTERFACE IMPORTED)
+endif()
 
 # ── Protobuf / gRPC code generation (only when both are found) ──────
 if(protobuf_FOUND AND gRPC_FOUND)

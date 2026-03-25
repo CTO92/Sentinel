@@ -188,13 +188,18 @@ impl QuarantineManager {
         action: QuarantineAction,
         reason: &str,
     ) -> Result<QuarantineState, QuarantineError> {
+        let current = self
+            .states
+            .get(gpu_uuid)
+            .map(|r| r.state)
+            .unwrap_or(QuarantineState::Healthy);
+
+        let new_state = self.validate_transition(current, action)?;
+
         let record = self
             .states
             .entry(gpu_uuid.to_string())
             .or_insert_with(GpuStateRecord::new);
-
-        let current = record.state;
-        let new_state = self.validate_transition(current, action)?;
 
         // Check if condemn requires approval.
         if action == QuarantineAction::Condemn && self.config.condemn_requires_approval {
