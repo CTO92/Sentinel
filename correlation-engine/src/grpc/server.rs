@@ -4,7 +4,6 @@
 //! registered. Also starts the axum REST API server for the dashboard.
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::Result;
 use axum::{extract::State, routing::get, Json, Router};

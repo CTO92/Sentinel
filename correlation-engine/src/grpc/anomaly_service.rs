@@ -8,8 +8,8 @@ use std::collections::HashMap;
 
 use chrono::{DateTime, Utc};
 use tokio::sync::mpsc;
-use tokio_stream::{Stream, StreamExt};
-use tonic::{Request, Response, Status, Streaming};
+use tokio_stream::StreamExt;
+use tonic::Streaming;
 use tracing::{debug, error, info, warn};
 
 use crate::correlation::engine::EngineHandle;

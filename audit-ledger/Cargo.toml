@@ -30,10 +30,6 @@ lazy_static = "1"
 subtle = "2"
 async-stream = "0.3"
 tokio-stream = "0.1"
-http = "1"
-http-body = "1"
-http-body-util = "0.1"
-bytes = "1"
 
 [build-dependencies]
 tonic-build = "0.11"

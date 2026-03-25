@@ -194,7 +194,7 @@ fn compute_cohort(key: &str, records: &[&GpuHealthRecord]) -> CohortSummary {
 }
 
 /// Get the N worst-performing GPUs by reliability score.
-pub fn worst_gpus(records: &[&GpuHealthRecord], n: usize) -> Vec<&GpuHealthRecord> {
+pub fn worst_gpus<'a>(records: &[&'a GpuHealthRecord], n: usize) -> Vec<&'a GpuHealthRecord> {
     let mut sorted: Vec<&GpuHealthRecord> = records.to_vec();
     sorted.sort_by(|a, b| {
         a.reliability_score()
