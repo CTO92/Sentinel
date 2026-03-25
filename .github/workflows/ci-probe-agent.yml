@@ -78,6 +78,8 @@ jobs:
 
       - name: Build and test
         working-directory: probe-agent
+        env:
+          LD_LIBRARY_PATH: /usr/local/cuda/lib64/stubs
         run: |
           cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
           cmake --build build --parallel $(nproc)

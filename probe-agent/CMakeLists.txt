@@ -245,7 +245,7 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
             list(APPEND _UNIT_TEST_LIBS GTest::gmock)
         endif()
         target_link_libraries(sentinel_unit_tests PRIVATE ${_UNIT_TEST_LIBS})
-        gtest_discover_tests(sentinel_unit_tests)
+        gtest_discover_tests(sentinel_unit_tests DISCOVERY_MODE PRE_TEST)
 
         # CUDA unit tests
         set(CUDA_UNIT_TESTS
@@ -262,7 +262,7 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
                 GTest::gtest
                 GTest::gtest_main
         )
-        gtest_discover_tests(sentinel_cuda_unit_tests)
+        gtest_discover_tests(sentinel_cuda_unit_tests DISCOVERY_MODE PRE_TEST)
 
         # Integration tests (gRPC tests only when protobuf/gRPC are available)
         set(INTEGRATION_TESTS
@@ -281,7 +281,7 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
                 GTest::gtest
                 GTest::gtest_main
         )
-        gtest_discover_tests(sentinel_integration_tests)
+        gtest_discover_tests(sentinel_integration_tests DISCOVERY_MODE PRE_TEST)
     else()
         message(STATUS "GTest not found — skipping test targets")
     endif()
