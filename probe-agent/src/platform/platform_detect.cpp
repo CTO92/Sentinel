@@ -56,10 +56,9 @@ bool detect_cuda(PlatformInfo& info) {
         cudaDeviceGetPCIBusId(pci_bus, sizeof(pci_bus), i);
         dev.pci_bus_id = pci_bus;
 
-        // Get UUID via cudaDeviceGetUuid.
-        cudaUUID_t uuid{};
-        if (cudaDeviceGetUuid(&uuid, i) == cudaSuccess) {
-            // Format as GPU-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
+        // Get UUID from cudaDeviceProp.uuid (available since CUDA 9.2).
+        {
+            const auto& uuid = prop.uuid;
             char uuid_str[48];
             std::snprintf(uuid_str, sizeof(uuid_str),
                          "GPU-%02x%02x%02x%02x-%02x%02x-%02x%02x-"
