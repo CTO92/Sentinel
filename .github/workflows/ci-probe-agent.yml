@@ -37,7 +37,8 @@ jobs:
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
             cmake ninja-build g++ git protobuf-compiler libprotobuf-dev \
-            libgrpc++-dev libgtest-dev pkg-config ca-certificates
+            libgrpc++-dev libgtest-dev pkg-config ca-certificates \
+            libspdlog-dev nlohmann-json3-dev libssl-dev
           rm -rf /var/lib/apt/lists/*
 
       - name: Configure CMake
@@ -72,7 +73,7 @@ jobs:
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
             cmake ninja-build g++ libgtest-dev libprotobuf-dev \
-            libgrpc++-dev pkg-config
+            libgrpc++-dev pkg-config libspdlog-dev nlohmann-json3-dev libssl-dev
           rm -rf /var/lib/apt/lists/*
 
       - name: Build and test
@@ -115,7 +116,7 @@ jobs:
         run: |
           apt-get update && apt-get install -y --no-install-recommends \
             clang-tidy cmake ninja-build g++ libprotobuf-dev \
-            libgrpc++-dev libgtest-dev pkg-config
+            libgrpc++-dev libgtest-dev pkg-config libspdlog-dev nlohmann-json3-dev libssl-dev
           rm -rf /var/lib/apt/lists/*
 
       - name: Generate compile_commands.json
