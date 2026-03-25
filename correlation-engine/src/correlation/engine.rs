@@ -397,16 +397,16 @@ impl CorrelationEngine {
         };
 
         // Only transition if the new state is "worse" or explicitly returned to healthy.
-        let should_transition = match (current_state, new_state) {
+        let should_transition = matches!(
+            (current_state, new_state),
             (QuarantineState::Healthy, QuarantineState::Suspect)
             | (QuarantineState::Healthy, QuarantineState::Quarantined)
             | (QuarantineState::Healthy, QuarantineState::Condemned)
             | (QuarantineState::Suspect, QuarantineState::Quarantined)
             | (QuarantineState::Suspect, QuarantineState::Condemned)
             | (QuarantineState::Quarantined, QuarantineState::Condemned)
-            | (QuarantineState::DeepTest, QuarantineState::Condemned) => true,
-            _ => false,
-        };
+            | (QuarantineState::DeepTest, QuarantineState::Condemned)
+        );
 
         if should_transition {
             let evidence: Vec<String> = patterns.iter().map(|p| p.pattern_id.clone()).collect();

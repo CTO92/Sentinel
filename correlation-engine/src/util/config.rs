@@ -20,7 +20,7 @@ pub enum ConfigError {
 }
 
 /// Top-level configuration for the Correlation Engine.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct AppConfig {
     /// gRPC server settings.
@@ -61,26 +61,6 @@ pub struct AppConfig {
 
     /// Audit ledger client settings.
     pub audit: AuditConfig,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            grpc: GrpcConfig::default(),
-            rest: RestConfig::default(),
-            bayesian: BayesianConfig::default(),
-            quarantine: QuarantineConfig::default(),
-            temporal_window: TemporalWindowConfig::default(),
-            tmr: TmrConfig::default(),
-            trust: TrustConfig::default(),
-            redis: RedisConfig::default(),
-            alerting: AlertingConfig::default(),
-            metrics: MetricsConfig::default(),
-            logging: LoggingConfig::default(),
-            event_store: EventStoreConfig::default(),
-            audit: AuditConfig::default(),
-        }
-    }
 }
 
 /// gRPC server configuration.
@@ -352,7 +332,7 @@ impl Default for PagerDutyConfig {
 }
 
 /// Slack configuration.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct SlackConfig {
     /// Whether Slack integration is enabled.
@@ -365,18 +345,8 @@ pub struct SlackConfig {
     pub channel: String,
 }
 
-impl Default for SlackConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            webhook_url: String::new(),
-            channel: String::new(),
-        }
-    }
-}
-
 /// Generic webhook configuration.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 pub struct WebhookConfig {
     /// Human-readable name for this webhook.
@@ -393,18 +363,6 @@ pub struct WebhookConfig {
 
     /// HTTP headers to include.
     pub headers: std::collections::HashMap<String, String>,
-}
-
-impl Default for WebhookConfig {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            url: String::new(),
-            enabled: false,
-            secret: String::new(),
-            headers: std::collections::HashMap::new(),
-        }
-    }
 }
 
 /// Prometheus metrics configuration.

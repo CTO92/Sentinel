@@ -6,7 +6,7 @@ FROM rust:1.77-bookworm AS builder
 WORKDIR /build
 
 # Cache dependency compilation by copying manifests first.
-COPY Cargo.toml Cargo.lock* build.rs ./
+COPY audit-ledger/Cargo.toml audit-ledger/Cargo.lock* audit-ledger/build.rs ./
 RUN mkdir -p src && echo 'fn main() {}' > src/main.rs && \
     echo 'pub mod compliance; pub mod grpc; pub mod ledger; pub mod storage; pub mod util;' > src/lib.rs && \
     mkdir -p src/compliance src/grpc src/ledger src/storage/migrations src/util && \
@@ -14,7 +14,7 @@ RUN mkdir -p src && echo 'fn main() {}' > src/main.rs && \
     cargo build --release 2>/dev/null || true
 
 # Copy the real source and rebuild.
-COPY src/ src/
+COPY audit-ledger/src/ src/
 RUN cargo build --release --bin sentinel-audit-ledger
 
 # Stage 2: Minimal runtime image.

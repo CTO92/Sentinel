@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! SENTINEL Correlation Engine library crate.
 //!
 //! The Correlation Engine is the central intelligence component of the SENTINEL

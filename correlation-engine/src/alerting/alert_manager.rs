@@ -116,6 +116,7 @@ pub struct AlertManager {
 
 impl AlertManager {
     /// Create a new alert manager and return a handle for submitting alerts.
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(_config: AlertingConfig) -> (AlertHandle, mpsc::Receiver<Alert>) {
         let (tx, rx) = mpsc::channel(1_000);
         (AlertHandle { sender: tx }, rx)

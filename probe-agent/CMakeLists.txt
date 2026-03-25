@@ -214,56 +214,60 @@ target_link_libraries(sentinel-probe-agent
 
 # ── Tests ─────────────────────────────────────────────────────────────
 if(SENTINEL_BUILD_TESTS)
-    enable_testing()
-    find_package(GTest CONFIG REQUIRED)
-    include(GoogleTest)
+    find_package(GTest CONFIG QUIET)
+    if(GTest_FOUND)
+        enable_testing()
+        include(GoogleTest)
 
-    # Unit tests (C++ only)
-    set(UNIT_TESTS
-        tests/unit/test_scheduler.cpp
-        tests/unit/test_ring_buffer.cpp
-    )
-    add_executable(sentinel_unit_tests ${UNIT_TESTS})
-    target_link_libraries(sentinel_unit_tests
-        PRIVATE
-            sentinel_agent_lib
-            GTest::gtest
-            GTest::gtest_main
-            GTest::gmock
-    )
-    gtest_discover_tests(sentinel_unit_tests)
+        # Unit tests (C++ only)
+        set(UNIT_TESTS
+            tests/unit/test_scheduler.cpp
+            tests/unit/test_ring_buffer.cpp
+        )
+        add_executable(sentinel_unit_tests ${UNIT_TESTS})
+        target_link_libraries(sentinel_unit_tests
+            PRIVATE
+                sentinel_agent_lib
+                GTest::gtest
+                GTest::gtest_main
+                GTest::gmock
+        )
+        gtest_discover_tests(sentinel_unit_tests)
 
-    # CUDA unit tests
-    set(CUDA_UNIT_TESTS
-        tests/unit/test_fma_probe.cpp
-        tests/unit/test_sm_affinity.cpp
-    )
-    add_executable(sentinel_cuda_unit_tests ${CUDA_UNIT_TESTS})
-    target_link_libraries(sentinel_cuda_unit_tests
-        PRIVATE
-            sentinel_agent_lib
-            sentinel_probes
-            GTest::gtest
-            GTest::gtest_main
-    )
-    gtest_discover_tests(sentinel_cuda_unit_tests)
+        # CUDA unit tests
+        set(CUDA_UNIT_TESTS
+            tests/unit/test_fma_probe.cpp
+            tests/unit/test_sm_affinity.cpp
+        )
+        add_executable(sentinel_cuda_unit_tests ${CUDA_UNIT_TESTS})
+        target_link_libraries(sentinel_cuda_unit_tests
+            PRIVATE
+                sentinel_agent_lib
+                sentinel_probes
+                GTest::gtest
+                GTest::gtest_main
+        )
+        gtest_discover_tests(sentinel_cuda_unit_tests)
 
-    # Integration tests (gRPC tests only when protobuf/gRPC are available)
-    set(INTEGRATION_TESTS
-        tests/integration/test_full_probe_cycle.cpp
-    )
-    if(protobuf_FOUND AND gRPC_FOUND)
-        list(APPEND INTEGRATION_TESTS tests/integration/test_agent_grpc.cpp)
+        # Integration tests (gRPC tests only when protobuf/gRPC are available)
+        set(INTEGRATION_TESTS
+            tests/integration/test_full_probe_cycle.cpp
+        )
+        if(protobuf_FOUND AND gRPC_FOUND)
+            list(APPEND INTEGRATION_TESTS tests/integration/test_agent_grpc.cpp)
+        endif()
+        add_executable(sentinel_integration_tests ${INTEGRATION_TESTS})
+        target_link_libraries(sentinel_integration_tests
+            PRIVATE
+                sentinel_agent_lib
+                sentinel_probes
+                GTest::gtest
+                GTest::gtest_main
+        )
+        gtest_discover_tests(sentinel_integration_tests)
+    else()
+        message(STATUS "GTest not found — skipping test targets")
     endif()
-    add_executable(sentinel_integration_tests ${INTEGRATION_TESTS})
-    target_link_libraries(sentinel_integration_tests
-        PRIVATE
-            sentinel_agent_lib
-            sentinel_probes
-            GTest::gtest
-            GTest::gtest_main
-    )
-    gtest_discover_tests(sentinel_integration_tests)
 endif()
 
 # ── Install rules ────────────────────────────────────────────────────

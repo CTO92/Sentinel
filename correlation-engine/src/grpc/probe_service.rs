@@ -33,6 +33,7 @@ impl ProbeServiceImpl {
 
     /// Process a single probe execution from a batch, converting it to
     /// an internal correlation event and forwarding to the engine.
+    #[allow(clippy::too_many_arguments)]
     async fn process_probe_execution(
         &self,
         agent_hostname: &str,

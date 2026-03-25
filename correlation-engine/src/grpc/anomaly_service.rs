@@ -30,6 +30,7 @@ impl AnomalyServiceImpl {
 
     /// Process a single anomaly event, converting it to an internal
     /// correlation event and forwarding to the engine.
+    #[allow(clippy::too_many_arguments)]
     pub async fn process_anomaly_event(
         &self,
         event_id: &str,
@@ -67,7 +68,7 @@ impl AnomalyServiceImpl {
             event_type,
             timestamp: timestamp.unwrap_or_else(Utc::now),
             severity,
-            score: score as f64,
+            score,
             metadata,
         };
 
