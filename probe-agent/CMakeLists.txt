@@ -218,6 +218,7 @@ target_compile_options(sentinel_probes PRIVATE
 add_executable(sentinel-probe-agent src/main.cpp)
 target_link_libraries(sentinel-probe-agent
     PRIVATE
+        sentinel_probes
         sentinel_agent_lib
         sentinel_probes
 )
@@ -236,7 +237,7 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
             tests/unit/test_ring_buffer.cpp
         )
         add_executable(sentinel_unit_tests ${UNIT_TESTS})
-        set(_UNIT_TEST_LIBS sentinel_agent_lib sentinel_probes GTest::gtest GTest::gtest_main)
+        set(_UNIT_TEST_LIBS sentinel_probes sentinel_agent_lib sentinel_probes GTest::gtest GTest::gtest_main)
         if(TARGET GTest::gmock)
             list(APPEND _UNIT_TEST_LIBS GTest::gmock)
         endif()
@@ -251,6 +252,7 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
         add_executable(sentinel_cuda_unit_tests ${CUDA_UNIT_TESTS})
         target_link_libraries(sentinel_cuda_unit_tests
             PRIVATE
+                sentinel_probes
                 sentinel_agent_lib
                 sentinel_probes
                 GTest::gtest
@@ -268,6 +270,7 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
         add_executable(sentinel_integration_tests ${INTEGRATION_TESTS})
         target_link_libraries(sentinel_integration_tests
             PRIVATE
+                sentinel_probes
                 sentinel_agent_lib
                 sentinel_probes
                 GTest::gtest
