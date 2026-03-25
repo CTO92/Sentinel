@@ -236,7 +236,7 @@ if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
             tests/unit/test_ring_buffer.cpp
         )
         add_executable(sentinel_unit_tests ${UNIT_TESTS})
-        set(_UNIT_TEST_LIBS sentinel_agent_lib GTest::gtest GTest::gtest_main)
+        set(_UNIT_TEST_LIBS sentinel_agent_lib sentinel_probes GTest::gtest GTest::gtest_main)
         if(TARGET GTest::gmock)
             list(APPEND _UNIT_TEST_LIBS GTest::gmock)
         endif()
