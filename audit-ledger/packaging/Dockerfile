@@ -1,7 +1,7 @@
 # SENTINEL Audit Ledger — Multi-stage Docker build
 # Stage 1: Build the Rust binary.
 
-FROM rust:1.82-bookworm AS builder
+FROM rust:1.85-bookworm AS builder
 
 WORKDIR /build
 
