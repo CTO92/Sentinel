@@ -29,9 +29,10 @@ dashboard/dist/
 venv/
 env/
 
-# IDE
+# IDE and tools
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
