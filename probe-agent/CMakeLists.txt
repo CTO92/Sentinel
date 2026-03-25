@@ -213,8 +213,9 @@ target_link_libraries(sentinel-probe-agent
 )
 
 # ── Tests ─────────────────────────────────────────────────────────────
-if(SENTINEL_BUILD_TESTS)
-    find_package(GTest CONFIG QUIET)
+option(SENTINEL_BUILD_TESTS "Build test targets" ON)
+if(SENTINEL_BUILD_TESTS OR BUILD_TESTING)
+    find_package(GTest QUIET)
     if(GTest_FOUND)
         enable_testing()
         include(GoogleTest)
