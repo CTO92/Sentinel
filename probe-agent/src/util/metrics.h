@@ -1,9 +1,9 @@
 /// @file metrics.h
 /// @brief Prometheus metrics exposition for the probe agent.
 ///
-/// Exposes counters, gauges, and histograms for probe execution, latency,
-/// errors, telemetry collection, and gRPC client health. The HTTP endpoint
-/// is served on a configurable port (default 9101).
+/// When prometheus-cpp is available (SENTINEL_HAS_PROMETHEUS=1), exposes
+/// counters, gauges, and histograms via an HTTP endpoint. Otherwise all
+/// recording methods are no-ops.
 
 #pragma once
 
@@ -11,16 +11,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-
-namespace prometheus {
-class Registry;
-class Counter;
-class Gauge;
-class Histogram;
-class Family;
-template <typename T>
-class Family;
-}  // namespace prometheus
 
 namespace sentinel::util {
 
@@ -51,8 +41,6 @@ public:
     // ── Probe metrics ─────────────────────────────────────────────────
 
     /// Increment the probe execution counter.
-    /// @param probe_type  e.g., "fma", "tensor_core"
-    /// @param result      "pass", "fail", "error", "timeout"
     void record_probe_execution(std::string_view probe_type, std::string_view result);
 
     /// Record probe execution latency in seconds.

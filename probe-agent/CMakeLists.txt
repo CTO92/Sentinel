@@ -136,9 +136,15 @@ set(AGENT_SOURCES
     src/platform/hip_runtime.cpp
     src/platform/platform_detect.cpp
     src/util/logging.cpp
-    src/util/metrics.cpp
     src/util/crypto.cpp
 )
+
+# Prometheus metrics: use real impl when available, no-op fallback otherwise
+if(prometheus-cpp_FOUND)
+    list(APPEND AGENT_SOURCES src/util/metrics.cpp)
+else()
+    list(APPEND AGENT_SOURCES src/util/metrics_noop.cpp)
+endif()
 
 # gRPC-dependent sources are only compiled when protobuf/gRPC are available
 if(protobuf_FOUND AND gRPC_FOUND)
@@ -153,6 +159,7 @@ target_include_directories(sentinel_agent_lib
 target_link_libraries(sentinel_agent_lib
     PUBLIC
         spdlog::spdlog
+        prometheus-cpp::core
         prometheus-cpp::pull
         OpenSSL::SSL
         OpenSSL::Crypto
@@ -161,6 +168,9 @@ target_link_libraries(sentinel_agent_lib
         CUDA::nvml
         Threads::Threads
 )
+if(prometheus-cpp_FOUND)
+    target_compile_definitions(sentinel_agent_lib PUBLIC SENTINEL_HAS_PROMETHEUS=1)
+endif()
 
 if(protobuf_FOUND AND gRPC_FOUND)
     target_include_directories(sentinel_agent_lib PUBLIC "${PROTO_OUT_DIR}")
