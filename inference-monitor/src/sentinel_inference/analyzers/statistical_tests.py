@@ -7,9 +7,7 @@ caused by silent data corruption.
 
 from __future__ import annotations
 
-import dataclasses
 from collections import deque
-from typing import Any
 
 import numpy as np
 import structlog
@@ -110,7 +108,9 @@ class StatisticalTestAnalyzer:
                     ucl=self._config.ks_p_value_threshold,
                     lcl=0.0,
                     sample_count=len(self._baseline),
-                    severity="critical" if ks_p < self._config.ks_p_value_threshold / 10 else "warning",
+                    severity=(
+                        "critical" if ks_p < self._config.ks_p_value_threshold / 10 else "warning"
+                    ),
                     details={"ks_statistic": ks_stat, "p_value": ks_p},
                 )
             )

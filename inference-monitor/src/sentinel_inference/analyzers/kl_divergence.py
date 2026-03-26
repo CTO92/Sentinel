@@ -11,7 +11,6 @@ from __future__ import annotations
 import dataclasses
 import time
 from collections import OrderedDict
-from typing import Any
 
 import numpy as np
 import structlog

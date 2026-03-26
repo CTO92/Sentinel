@@ -9,6 +9,7 @@ production deployments.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import time
 import uuid
@@ -201,24 +202,18 @@ class CorrelationEngineClient:
         self._running = False
         if self._flush_task is not None:
             self._flush_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._flush_task
-            except asyncio.CancelledError:
-                pass
         if self._ack_task is not None:
             self._ack_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._ack_task
-            except asyncio.CancelledError:
-                pass
         # Final flush.
         await self._flush()
         # Close the bidi stream if open.
         if self._stream is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await self._stream.done_writing()
-            except Exception:
-                pass
             self._stream = None
         if self._channel is not None:
             await self._channel.close()
@@ -386,8 +381,10 @@ class CorrelationEngineClient:
     async def _do_send_proto(self, report: AnomalyReport) -> None:
         """Send using generated protobuf stubs."""
         from google.protobuf.timestamp_pb2 import Timestamp  # type: ignore[import-untyped]
-        from sentinel.v1 import anomaly_pb2  # type: ignore[import-untyped]
-        from sentinel.v1 import common_pb2  # type: ignore[import-untyped]
+        from sentinel.v1 import (
+            anomaly_pb2,  # type: ignore[import-untyped]
+            common_pb2,  # type: ignore[import-untyped]
+        )
 
         # Build the AnomalyBatch protobuf message.
         batch = anomaly_pb2.AnomalyBatch()
@@ -473,7 +470,6 @@ class CorrelationEngineClient:
         """
         import json
 
-        import grpc  # type: ignore[import-untyped]
 
         payload = json.dumps({
             "source_hostname": report.source_hostname,

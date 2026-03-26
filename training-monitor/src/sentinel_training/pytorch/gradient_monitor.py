@@ -6,9 +6,6 @@ collapses that may indicate silent data corruption in the backward pass.
 
 from __future__ import annotations
 
-import math
-
-import numpy as np
 import structlog
 
 from sentinel_training.common.anomaly_detector import (
@@ -77,7 +74,7 @@ class GradientMonitor:
             )
         return self._trackers[name]
 
-    def on_gradient(self, name: str, grad: "torch.Tensor") -> AnomalyScore | None:
+    def on_gradient(self, name: str, grad: torch.Tensor) -> AnomalyScore | None:
         """Process a gradient tensor for a named parameter.
 
         Computes the L2 norm, updates the EWMA tracker, and checks for anomalies.
@@ -171,7 +168,7 @@ class GradientMonitor:
         return step_anomalies
 
     def check_all_gradients(
-        self, model: "nn.Module"
+        self, model: nn.Module
     ) -> list[AnomalyScore]:
         """Check gradient norms for all parameters of a model.
 

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import numpy as np
 import structlog
 
 from sentinel_training.common.anomaly_detector import (

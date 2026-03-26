@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from sentinel_inference.analyzers.kl_divergence import (
     KLDivergenceDetector,

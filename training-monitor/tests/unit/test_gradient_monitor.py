@@ -11,7 +11,7 @@ from sentinel_training.common.config import GradientNormConfig
 # Try to import torch; skip tests if unavailable
 torch = pytest.importorskip("torch")
 
-from sentinel_training.pytorch.gradient_monitor import GradientMonitor
+from sentinel_training.pytorch.gradient_monitor import GradientMonitor  # noqa: E402
 
 
 class TestEWMATracker:
@@ -25,7 +25,7 @@ class TestEWMATracker:
 
     def test_warmup_period(self) -> None:
         tracker = EWMATracker(alpha=0.1, warmup_steps=5)
-        for i in range(4):
+        for _i in range(4):
             tracker.update(1.0)
             assert not tracker.is_warmed_up
         tracker.update(1.0)
@@ -204,7 +204,7 @@ class TestGradientMonitor:
         # Float16 gradients
         for _ in range(10):
             grad = torch.randn(100, dtype=torch.float16) * 0.1
-            result = monitor.on_gradient("fp16_layer", grad)
+            monitor.on_gradient("fp16_layer", grad)
 
         norms = monitor.get_norms()
         assert "fp16_layer" in norms
@@ -217,7 +217,7 @@ class TestGradientMonitor:
 
         results = []
         # With accumulation=4, only every 4th call should produce a result
-        for i in range(20):
+        for _i in range(20):
             grad = torch.randn(100) * 0.1
             result = monitor.on_gradient("accum_layer", grad)
             if result is not None:

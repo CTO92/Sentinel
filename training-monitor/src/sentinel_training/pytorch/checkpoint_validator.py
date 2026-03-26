@@ -151,10 +151,7 @@ class CheckpointValidator:
         distance = float(np.linalg.norm(diff))
         prev_norm = float(np.linalg.norm(prev_fp.projection_vector))
 
-        if prev_norm > 1e-12:
-            relative_distance = distance / prev_norm
-        else:
-            relative_distance = distance
+        relative_distance = distance / prev_norm if prev_norm > 1e-12 else distance
 
         if relative_distance > self._config.max_param_divergence:
             anomaly = AnomalyScore(

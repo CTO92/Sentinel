@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
 from sentinel_training.common.anomaly_detector import AnomalyType
@@ -10,7 +9,7 @@ from sentinel_training.common.config import CrossRankDivergenceConfig
 
 torch = pytest.importorskip("torch")
 
-from sentinel_training.pytorch.ddp_divergence import DDPDivergenceDetector
+from sentinel_training.pytorch.ddp_divergence import DDPDivergenceDetector  # noqa: E402
 
 
 class TestDDPDivergenceDetector:

@@ -12,9 +12,6 @@ as either:
 
 from __future__ import annotations
 
-import dataclasses
-from typing import Any
-
 import numpy as np
 import structlog
 

@@ -76,7 +76,7 @@ class CountMinSketch:
             min_count = min(min_count, int(self._table[row, col]))
         return min_count
 
-    def merge(self, other: "CountMinSketch") -> None:
+    def merge(self, other: CountMinSketch) -> None:
         """Merge another CMS into this one (element-wise addition)."""
         if self._width != other._width or self._depth != other._depth:
             raise ValueError("Cannot merge sketches with different dimensions.")
@@ -95,7 +95,7 @@ class CountMinSketch:
 
     def detect_shift(
         self,
-        other: "CountMinSketch",
+        other: CountMinSketch,
         top_k_items: list[int],
         threshold: float = 0.05,
     ) -> list[tuple[int, float, float]]:
@@ -204,7 +204,7 @@ class HyperLogLogSketch:
 
         return raw_estimate
 
-    def merge(self, other: "HyperLogLogSketch") -> None:
+    def merge(self, other: HyperLogLogSketch) -> None:
         """Merge another HLL into this one (element-wise max)."""
         if self._precision != other._precision:
             raise ValueError("Cannot merge HLLs with different precision.")

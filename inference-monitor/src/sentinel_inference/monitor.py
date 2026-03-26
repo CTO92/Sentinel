@@ -17,10 +17,10 @@ Concurrency model:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import signal
 import sys
 import time
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -236,7 +236,7 @@ class InferenceMonitor:
         while self._running:
             try:
                 capture = await asyncio.wait_for(self._queue.get(), timeout=1.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except asyncio.CancelledError:
                 return
@@ -328,7 +328,7 @@ class InferenceMonitor:
         anomalies.extend(result)
 
         # Tensor fingerprint (for logging / future use)
-        fp = await loop.run_in_executor(
+        _fp = await loop.run_in_executor(
             None, self._fingerprinter.compute, capture.tensor
         )
 
@@ -402,10 +402,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.config:
-        config = MonitorConfig.from_yaml(args.config)
-    else:
-        config = MonitorConfig.from_env()
+    config = MonitorConfig.from_yaml(args.config) if args.config else MonitorConfig.from_env()
 
     # Use uvloop on Linux for better performance
     if sys.platform != "win32":
@@ -423,11 +420,8 @@ def main() -> None:
 
     # Handle graceful shutdown
     for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
+        with contextlib.suppress(NotImplementedError):
             loop.add_signal_handler(sig, lambda: asyncio.ensure_future(monitor.stop()))
-        except NotImplementedError:
-            # Signal handlers not supported on Windows event loop
-            pass
 
     try:
         loop.run_until_complete(monitor.run_forever())

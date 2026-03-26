@@ -25,7 +25,7 @@ logger = structlog.get_logger(__name__)
 try:
     import jax
     import jax.numpy as jnp
-    from jax.sharding import NamedSharding, PartitionSpec, Mesh
+    from jax.sharding import Mesh, NamedSharding, PartitionSpec  # noqa: F401
 except ImportError:
     jax = None  # type: ignore[assignment]
     jnp = None  # type: ignore[assignment]
@@ -113,7 +113,6 @@ class PjitMonitor:
             # All norms are nearly identical
             return []
 
-        threshold = self._config.tolerance
         for device_id, norm_val in device_norms.items():
             deviation = abs(norm_val - median_norm) / mad
             if deviation > 3.0:  # 3 MAD threshold

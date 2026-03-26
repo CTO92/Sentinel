@@ -7,6 +7,7 @@ reconnection and mTLS support.
 from __future__ import annotations
 
 import atexit
+import contextlib
 import threading
 import time
 from collections import deque
@@ -163,10 +164,8 @@ class GrpcAnomalyClient:
     def _disconnect(self) -> None:
         """Close the gRPC channel."""
         if self._channel is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._channel.close()
-            except Exception:
-                pass
             self._channel = None
             self._connected = False
 

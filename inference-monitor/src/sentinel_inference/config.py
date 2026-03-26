@@ -120,7 +120,8 @@ class StatisticalTestsConfig(BaseModel):
         default=1,
         ge=0,
         le=4,
-        description="Index into Anderson-Darling significance levels (0=15%, 1=10%, 2=5%, 3=2.5%, 4=1%).",
+        description="Index into Anderson-Darling significance levels "
+        "(0=15%, 1=10%, 2=5%, 3=2.5%, 4=1%).",
     )
     baseline_size: int = Field(
         default=5000,
@@ -252,7 +253,7 @@ class MonitorConfig(BaseModel):
     metrics: MetricsConfig = Field(default_factory=MetricsConfig)
 
     @model_validator(mode="after")
-    def _set_defaults(self) -> "MonitorConfig":
+    def _set_defaults(self) -> MonitorConfig:
         if not self.node_id:
             self.node_id = os.environ.get("HOSTNAME", "unknown")
         if not self.replica_id:
@@ -260,7 +261,7 @@ class MonitorConfig(BaseModel):
         return self
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "MonitorConfig":
+    def from_yaml(cls, path: str | Path) -> MonitorConfig:
         """Load configuration from a YAML file, with env-var overrides."""
         import yaml  # type: ignore[import-untyped]
 
@@ -273,7 +274,7 @@ class MonitorConfig(BaseModel):
         return cls.model_validate(raw)
 
     @classmethod
-    def from_env(cls) -> "MonitorConfig":
+    def from_env(cls) -> MonitorConfig:
         """Build config from environment variables prefixed with SENTINEL_."""
         overrides: dict[str, str] = {}
         for key, val in os.environ.items():

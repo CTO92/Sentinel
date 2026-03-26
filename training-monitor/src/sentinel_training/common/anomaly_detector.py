@@ -307,16 +307,16 @@ class ARPredictor:
         p = self._order
 
         # Build the design matrix
-        X = np.zeros((n - p, p), dtype=np.float64)
+        x_mat = np.zeros((n - p, p), dtype=np.float64)
         y = data[p:]
         for i in range(p):
-            X[:, i] = data[p - i - 1 : n - i - 1]
+            x_mat[:, i] = data[p - i - 1 : n - i - 1]
 
         # Solve via least squares with regularization
         try:
             reg = 1e-8 * np.eye(p)
-            self._coefficients = np.linalg.solve(X.T @ X + reg, X.T @ y)
-            residuals = y - X @ self._coefficients
+            self._coefficients = np.linalg.solve(x_mat.T @ x_mat + reg, x_mat.T @ y)
+            residuals = y - x_mat @ self._coefficients
             self._residual_std = float(np.std(residuals)) if len(residuals) > 0 else 0.0
         except np.linalg.LinAlgError:
             logger.warning("ar_fit_failed", history_len=n)

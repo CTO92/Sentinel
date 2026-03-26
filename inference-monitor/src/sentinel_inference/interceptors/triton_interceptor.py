@@ -11,7 +11,6 @@ import asyncio
 import struct
 import uuid
 from multiprocessing import shared_memory
-from typing import Any
 
 import numpy as np
 import structlog

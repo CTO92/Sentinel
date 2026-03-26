@@ -8,10 +8,9 @@ using non-blocking telemetry via jax.debug.callback.
 from __future__ import annotations
 
 import functools
-import time
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
-import numpy as np
 import structlog
 
 from sentinel_training.common.anomaly_detector import (
@@ -138,7 +137,7 @@ def _compute_pytree_norms(
     leaves, treedef = jax.tree_util.tree_flatten(pytree)
     leaf_paths = _get_leaf_paths(pytree, prefix)
 
-    for path, leaf in zip(leaf_paths, leaves):
+    for path, leaf in zip(leaf_paths, leaves, strict=False):
         norm_val = float(jnp.linalg.norm(jnp.ravel(leaf)))
         norms[path] = norm_val
 

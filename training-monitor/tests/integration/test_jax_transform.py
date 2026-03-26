@@ -7,10 +7,10 @@ import pytest
 jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
 
-import numpy as np
+import numpy as np  # noqa: E402
 
-from sentinel_training.common.config import SentinelConfig
-from sentinel_training.jax.transforms import (
+from sentinel_training.common.config import SentinelConfig  # noqa: E402
+from sentinel_training.jax.transforms import (  # noqa: E402
     get_anomalies,
     get_gradient_norms,
     reset_state,

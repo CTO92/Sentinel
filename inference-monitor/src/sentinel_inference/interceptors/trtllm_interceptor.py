@@ -108,5 +108,5 @@ class TrtLLMInterceptor(BaseInterceptor):
         """Retrieve the next captured tensor from the internal queue."""
         try:
             return await asyncio.wait_for(self._queue.get(), timeout=0.1)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None

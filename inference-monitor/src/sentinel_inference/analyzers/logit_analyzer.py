@@ -66,9 +66,11 @@ class EWMATracker:
         "_sigma",
     )
 
-    def __init__(self, lambda_: float = 0.1, L: float = 3.5, burn_in: int = 1000) -> None:
+    def __init__(
+        self, lambda_: float = 0.1, control_limit: float = 3.5, burn_in: int = 1000,
+    ) -> None:
         self._lambda = lambda_
-        self._L = L
+        self._L = control_limit
         self._burn_in = burn_in
         self._count: int = 0
         self._ewma: float = 0.0

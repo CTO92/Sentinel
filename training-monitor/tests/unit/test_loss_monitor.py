@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from sentinel_training.common.anomaly_detector import AnomalyType, ARPredictor
 from sentinel_training.common.config import LossTrackingConfig
@@ -102,7 +101,7 @@ class TestLossMonitor:
         rng = np.random.RandomState(42)
         for step in range(100):
             loss = 5.0 - 0.01 * step + rng.normal(0, 0.05)
-            anomalies = monitor.on_loss(loss)
+            monitor.on_loss(loss)
             # During normal training, should detect no anomalies (after warmup stabilizes)
 
         # Most steps should be anomaly-free
@@ -163,8 +162,8 @@ class TestLossMonitor:
             monitor.on_loss(5.0 - 0.1 * step)
 
         # Now flat plateau at a non-zero value
-        for step in range(20):
-            anomalies = monitor.on_loss(3.5)
+        for _step in range(20):
+            monitor.on_loss(3.5)
 
         # Should eventually detect plateau
         plateau_anomalies = [

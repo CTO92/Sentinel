@@ -9,7 +9,6 @@ corrupted results.
 from __future__ import annotations
 
 import hashlib
-import time
 from typing import Any
 
 import numpy as np
@@ -59,7 +58,7 @@ class DDPDivergenceDetector:
 
     def compute_gradient_hash(
         self,
-        model: "nn.Module",
+        model: nn.Module,
     ) -> str:
         """Compute a deterministic hash of the model's current gradients.
 
@@ -74,7 +73,7 @@ class DDPDivergenceDetector:
         """
         # Collect all gradient values into a flat vector
         grad_parts: list[np.ndarray] = []
-        for name, param in sorted(model.named_parameters()):
+        for _name, param in sorted(model.named_parameters()):
             if param.grad is not None:
                 grad_np = param.grad.detach().cpu().float().numpy().ravel()
                 grad_parts.append(grad_np)
@@ -100,7 +99,7 @@ class DDPDivergenceDetector:
 
     def compute_gradient_hash_from_tensors(
         self,
-        gradients: list["torch.Tensor"],
+        gradients: list[torch.Tensor],
     ) -> str:
         """Compute gradient hash from a list of gradient tensors.
 
@@ -133,7 +132,7 @@ class DDPDivergenceDetector:
 
     def check_divergence(
         self,
-        model: "nn.Module",
+        model: nn.Module,
         process_group: Any = None,
     ) -> AnomalyScore | None:
         """Check for gradient divergence across ranks.

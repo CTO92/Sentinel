@@ -111,7 +111,7 @@ class SentinelConfig(BaseModel):
     cluster_id: str | None = None
 
     @model_validator(mode="after")
-    def _resolve_env_overrides(self) -> "SentinelConfig":
+    def _resolve_env_overrides(self) -> SentinelConfig:
         """Apply environment variable overrides with SENTINEL_ prefix."""
         env_map: dict[str, tuple[str, str, type[Any]]] = {
             "SENTINEL_GRPC_ENDPOINT": ("grpc", "endpoint", str),
@@ -134,11 +134,7 @@ class SentinelConfig(BaseModel):
         for env_key, (section, field, typ) in env_map.items():
             val = os.environ.get(env_key)
             if val is not None:
-                converted: Any
-                if typ is bool:
-                    converted = val.lower() in ("true", "1", "yes")
-                else:
-                    converted = typ(val)
+                converted: Any = val.lower() in ("true", "1", "yes") if typ is bool else typ(val)
                 if section:
                     setattr(getattr(self, section), field, converted)
                 else:
@@ -146,7 +142,7 @@ class SentinelConfig(BaseModel):
         return self
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "SentinelConfig":
+    def from_yaml(cls, path: str | Path) -> SentinelConfig:
         """Load configuration from a YAML file.
 
         Args:
@@ -172,6 +168,6 @@ class SentinelConfig(BaseModel):
         return cls.model_validate(data)
 
     @classmethod
-    def from_env(cls) -> "SentinelConfig":
+    def from_env(cls) -> SentinelConfig:
         """Create config from environment variables only."""
         return cls()

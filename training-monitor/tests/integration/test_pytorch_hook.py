@@ -7,14 +7,14 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from sentinel_training.common.config import SentinelConfig
-from sentinel_training.pytorch.hooks import SentinelTrainingHook
+from sentinel_training.common.config import SentinelConfig  # noqa: E402
+from sentinel_training.pytorch.hooks import SentinelTrainingHook  # noqa: E402
 
 
 class TestPyTorchHookIntegration:
     """Integration tests for the SentinelTrainingHook with a real PyTorch model."""
 
-    def _make_model_and_optimizer(self) -> tuple["torch.nn.Module", "torch.optim.Optimizer"]:
+    def _make_model_and_optimizer(self) -> tuple[torch.nn.Module, torch.optim.Optimizer]:
         """Create a small MLP for testing."""
         model = torch.nn.Sequential(
             torch.nn.Linear(20, 64),
@@ -55,7 +55,7 @@ class TestPyTorchHookIntegration:
 
         torch.manual_seed(42)
 
-        for step in range(20):
+        for _step in range(20):
             # Forward
             x = torch.randn(8, 20)
             target = torch.randn(8, 10)
@@ -136,7 +136,7 @@ class TestPyTorchHookIntegration:
 
         # Second checkpoint - should be close to first (small model, few steps)
         state2 = {k: v.clone() for k, v in model.state_dict().items()}
-        result2 = hook.on_checkpoint(state2, step=105)
+        hook.on_checkpoint(state2, step=105)
         # May or may not detect divergence depending on how much params changed
 
         hook.detach()
@@ -177,7 +177,7 @@ class TestPyTorchHookIntegration:
         hook = SentinelTrainingHook.attach(model, optimizer, config)
 
         torch.manual_seed(0)
-        for step in range(50):
+        for _step in range(50):
             x = torch.randn(8, 20)
             target = torch.randn(8, 10)
             output = model(x)

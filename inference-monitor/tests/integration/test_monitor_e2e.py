@@ -8,7 +8,7 @@ works correctly.
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+import contextlib
 from collections.abc import Sequence
 
 import numpy as np
@@ -132,10 +132,8 @@ async def test_normal_data_no_anomalies(normal_tensors: list[np.ndarray]) -> Non
     await monitor.start()
 
     # Wait for all tensors to be processed
-    try:
+    with contextlib.suppress(TimeoutError):
         await asyncio.wait_for(mock_interceptor.exhausted.wait(), timeout=10.0)
-    except asyncio.TimeoutError:
-        pass
 
     # Give workers time to drain the queue
     await asyncio.sleep(1.0)
@@ -161,10 +159,8 @@ async def test_corrupted_data_triggers_anomalies(
 
     await monitor.start()
 
-    try:
+    with contextlib.suppress(TimeoutError):
         await asyncio.wait_for(mock_interceptor.exhausted.wait(), timeout=10.0)
-    except asyncio.TimeoutError:
-        pass
 
     await asyncio.sleep(1.0)
     await monitor.stop()
@@ -189,10 +185,8 @@ async def test_pipeline_processes_all_samples() -> None:
 
     await monitor.start()
 
-    try:
+    with contextlib.suppress(TimeoutError):
         await asyncio.wait_for(mock_interceptor.exhausted.wait(), timeout=10.0)
-    except asyncio.TimeoutError:
-        pass
 
     await asyncio.sleep(1.0)
     await monitor.stop()

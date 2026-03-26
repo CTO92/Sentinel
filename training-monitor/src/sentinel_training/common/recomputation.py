@@ -8,9 +8,10 @@ the corruption.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 import numpy as np
 import structlog
@@ -351,10 +352,7 @@ class RecomputationEngine:
                     continue
                 diff_norm = float(np.linalg.norm(a_np - b_np))
                 base_norm = float(np.linalg.norm(a_np))
-                if base_norm > 1e-12:
-                    rel_div = diff_norm / base_norm
-                else:
-                    rel_div = diff_norm
+                rel_div = diff_norm / base_norm if base_norm > 1e-12 else diff_norm
                 max_divergence = max(max_divergence, rel_div)
             except (TypeError, ValueError):
                 continue

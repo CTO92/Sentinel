@@ -40,6 +40,7 @@ jobs:
             libgrpc++-dev libgtest-dev libgmock-dev pkg-config ca-certificates \
             libspdlog-dev nlohmann-json3-dev libssl-dev
           rm -rf /var/lib/apt/lists/*
+          ln -s /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/cuda/lib64/stubs/libnvidia-ml.so.1
 
       - name: Configure CMake
         working-directory: probe-agent
@@ -51,6 +52,8 @@ jobs:
 
       - name: Build
         working-directory: probe-agent
+        env:
+          LD_LIBRARY_PATH: /usr/local/cuda/lib64/stubs
         run: cmake --build build --parallel $(nproc)
 
       - name: Upload build artifacts
@@ -75,6 +78,7 @@ jobs:
             cmake ninja-build g++ libgtest-dev libgmock-dev libprotobuf-dev \
             libgrpc++-dev pkg-config libspdlog-dev nlohmann-json3-dev libssl-dev
           rm -rf /var/lib/apt/lists/*
+          ln -s /usr/local/cuda/lib64/stubs/libnvidia-ml.so /usr/local/cuda/lib64/stubs/libnvidia-ml.so.1
 
       - name: Build and test
         working-directory: probe-agent

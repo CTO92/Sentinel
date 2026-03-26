@@ -12,9 +12,9 @@ import math
 import structlog
 
 from sentinel_training.common.anomaly_detector import (
-    ARPredictor,
     AnomalyScore,
     AnomalyType,
+    ARPredictor,
 )
 from sentinel_training.common.config import LossTrackingConfig
 from sentinel_training.metrics import MetricsReporter
@@ -68,9 +68,8 @@ class LossMonitor:
         anomalies: list[AnomalyScore] = []
 
         # Record metric
-        if self._metrics is not None:
-            if math.isfinite(loss_value):
-                self._metrics.record_loss(loss_value)
+        if self._metrics is not None and math.isfinite(loss_value):
+            self._metrics.record_loss(loss_value)
 
         # NaN detection
         if self._config.nan_detection and not math.isfinite(loss_value):
@@ -172,29 +171,32 @@ class LossMonitor:
         mean_val = sum(recent) / len(recent)
         variance = sum((x - mean_val) ** 2 for x in recent) / len(recent)
 
-        if variance < self._config.plateau_tolerance:
+        if (
+            variance < self._config.plateau_tolerance
             # Only flag if we're past warmup and loss is not near zero
             # (near-zero loss with no variance is expected at convergence for some tasks)
-            if self._step_count > self._config.warmup_steps and abs(mean_val) > 1e-3:
-                anomaly = AnomalyScore(
-                    anomaly_type=AnomalyType.LOSS_PLATEAU,
-                    score=1.0 / max(variance, 1e-15),
-                    threshold=1.0 / self._config.plateau_tolerance,
-                    observed_value=mean_val,
-                    expected_value=mean_val,
-                    step=self._step_count,
-                    metadata={
-                        "variance": variance,
-                        "window_size": window,
-                    },
-                )
-                logger.warning(
-                    "loss_plateau_detected",
-                    step=self._step_count,
-                    variance=variance,
-                    mean_loss=mean_val,
-                )
-                return anomaly
+            and self._step_count > self._config.warmup_steps
+            and abs(mean_val) > 1e-3
+        ):
+            anomaly = AnomalyScore(
+                anomaly_type=AnomalyType.LOSS_PLATEAU,
+                score=1.0 / max(variance, 1e-15),
+                threshold=1.0 / self._config.plateau_tolerance,
+                observed_value=mean_val,
+                expected_value=mean_val,
+                step=self._step_count,
+                metadata={
+                    "variance": variance,
+                    "window_size": window,
+                },
+            )
+            logger.warning(
+                "loss_plateau_detected",
+                step=self._step_count,
+                variance=variance,
+                mean_loss=mean_val,
+            )
+            return anomaly
 
         return None
 

@@ -8,7 +8,8 @@ minimal overhead (~0.59ms per step).
 from __future__ import annotations
 
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import structlog
 
@@ -60,8 +61,8 @@ class SentinelTrainingHook:
 
     def __init__(
         self,
-        model: "nn.Module",
-        optimizer: "torch.optim.Optimizer",
+        model: nn.Module,
+        optimizer: torch.optim.Optimizer,
         config: SentinelConfig,
     ) -> None:
         self._model = model
@@ -114,10 +115,10 @@ class SentinelTrainingHook:
     @classmethod
     def attach(
         cls,
-        model: "nn.Module",
-        optimizer: "torch.optim.Optimizer",
+        model: nn.Module,
+        optimizer: torch.optim.Optimizer,
         config: SentinelConfig | None = None,
-    ) -> "SentinelTrainingHook":
+    ) -> SentinelTrainingHook:
         """Attach Sentinel monitoring to a model and optimizer.
 
         This is the main entry point. It creates the hook, registers
@@ -178,7 +179,7 @@ class SentinelTrainingHook:
         gradient_monitor = self._gradient_monitor
 
         def hook(
-            module: "nn.Module",
+            module: nn.Module,
             grad_input: tuple[Any, ...],
             grad_output: tuple[Any, ...],
         ) -> None:
