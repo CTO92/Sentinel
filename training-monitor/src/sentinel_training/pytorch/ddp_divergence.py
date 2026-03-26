@@ -87,9 +87,9 @@ class DDPDivergenceDetector:
         # Get or create projection vector
         if self._projection_vector is None or len(self._projection_vector) != grad_size:
             rng = np.random.RandomState(self._config.hash_seed)
-            self._projection_vector = rng.randn(
-                self._config.projection_dim, grad_size
-            ).astype(np.float32)
+            self._projection_vector = rng.randn(self._config.projection_dim, grad_size).astype(
+                np.float32
+            )
 
         # Project and hash
         projected = self._projection_vector @ flat_grads.astype(np.float32)
@@ -122,9 +122,9 @@ class DDPDivergenceDetector:
 
         if self._projection_vector is None or self._projection_vector.shape[1] != grad_size:
             rng = np.random.RandomState(self._config.hash_seed)
-            self._projection_vector = rng.randn(
-                self._config.projection_dim, grad_size
-            ).astype(np.float32)
+            self._projection_vector = rng.randn(self._config.projection_dim, grad_size).astype(
+                np.float32
+            )
 
         projected = self._projection_vector @ flat_grads.astype(np.float32)
         quantized = np.round(projected / self._config.tolerance) * self._config.tolerance
@@ -215,9 +215,7 @@ class DDPDivergenceDetector:
         majority_hash = max(hash_counts, key=lambda k: hash_counts[k])
 
         # Identify suspect ranks (those not matching majority)
-        suspect_ranks = [
-            rank for rank, h in enumerate(all_hashes) if h != majority_hash
-        ]
+        suspect_ranks = [rank for rank, h in enumerate(all_hashes) if h != majority_hash]
 
         # Determine if this rank is suspect
         is_local_suspect = local_hash != majority_hash

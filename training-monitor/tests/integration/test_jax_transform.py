@@ -42,7 +42,7 @@ class TestJAXTransformIntegration:
 
         @sentinel_monitor(config=config, name="test_loss")
         def loss_fn(params: jnp.ndarray) -> jnp.ndarray:
-            return jnp.sum(params ** 2)
+            return jnp.sum(params**2)
 
         params = jnp.ones(10)
         result = loss_fn(params)
@@ -51,7 +51,7 @@ class TestJAXTransformIntegration:
     def test_gradient_computation_works(self) -> None:
         @sentinel_monitor
         def loss_fn(params: jnp.ndarray) -> jnp.ndarray:
-            return jnp.sum(params ** 2)
+            return jnp.sum(params**2)
 
         params = jnp.array([1.0, 2.0, 3.0])
         grad_fn = jax.grad(loss_fn)
@@ -64,19 +64,19 @@ class TestJAXTransformIntegration:
     def test_value_and_grad_works(self) -> None:
         @sentinel_monitor(name="vg_test")
         def loss_fn(params: jnp.ndarray) -> jnp.ndarray:
-            return jnp.mean(params ** 2)
+            return jnp.mean(params**2)
 
         params = jnp.array([1.0, 2.0, 3.0, 4.0])
         val, grads = jax.value_and_grad(loss_fn)(params)
 
-        expected_val = jnp.mean(params ** 2)
+        expected_val = jnp.mean(params**2)
         np.testing.assert_allclose(float(val), float(expected_val), atol=1e-5)
         assert grads.shape == params.shape
 
     def test_multiple_calls_accumulate_state(self) -> None:
         @sentinel_monitor(name="multi_call")
         def loss_fn(params: jnp.ndarray) -> jnp.ndarray:
-            return jnp.sum(params ** 2)
+            return jnp.sum(params**2)
 
         grad_fn = jax.grad(loss_fn)
         params = jnp.ones(5)
@@ -93,7 +93,7 @@ class TestJAXTransformIntegration:
         def loss_fn(params: dict) -> jnp.ndarray:
             w = params["weight"]
             b = params["bias"]
-            return jnp.sum(w ** 2) + jnp.sum(b ** 2)
+            return jnp.sum(w**2) + jnp.sum(b**2)
 
         params = {
             "weight": jnp.ones((3, 3)),
@@ -117,6 +117,7 @@ class TestJAXTransformIntegration:
 
     def test_no_jax_fallback(self) -> None:
         """Test that sentinel_monitor works as identity when JAX is available."""
+
         @sentinel_monitor
         def simple_fn(x: jnp.ndarray) -> jnp.ndarray:
             return x * 2
@@ -127,7 +128,7 @@ class TestJAXTransformIntegration:
     def test_gradient_norms_api(self) -> None:
         @sentinel_monitor(name="norms_test")
         def loss_fn(params: jnp.ndarray) -> jnp.ndarray:
-            return jnp.sum(params ** 2)
+            return jnp.sum(params**2)
 
         grad_fn = jax.grad(loss_fn)
 

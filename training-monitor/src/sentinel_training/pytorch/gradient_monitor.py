@@ -162,14 +162,10 @@ class GradientMonitor:
             List of anomalies detected during this step.
         """
         self._step_count += 1
-        step_anomalies = [
-            a for a in self._anomalies if a.step == self._step_count - 1
-        ]
+        step_anomalies = [a for a in self._anomalies if a.step == self._step_count - 1]
         return step_anomalies
 
-    def check_all_gradients(
-        self, model: nn.Module
-    ) -> list[AnomalyScore]:
+    def check_all_gradients(self, model: nn.Module) -> list[AnomalyScore]:
         """Check gradient norms for all parameters of a model.
 
         Convenience method to process all parameter gradients at once.

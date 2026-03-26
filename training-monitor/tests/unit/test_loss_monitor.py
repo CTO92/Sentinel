@@ -167,8 +167,7 @@ class TestLossMonitor:
 
         # Should eventually detect plateau
         plateau_anomalies = [
-            a for a in monitor.recent_anomalies
-            if a.anomaly_type == AnomalyType.LOSS_PLATEAU
+            a for a in monitor.recent_anomalies if a.anomaly_type == AnomalyType.LOSS_PLATEAU
         ]
         assert len(plateau_anomalies) > 0
 

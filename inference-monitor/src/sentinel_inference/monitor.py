@@ -246,16 +246,15 @@ class InferenceMonitor:
             all_anomalies: list[AnomalyEvent] = []
 
             try:
-                all_anomalies.extend(
-                    await self._run_analysis(capture, labels)
-                )
+                all_anomalies.extend(await self._run_analysis(capture, labels))
             except Exception:
                 logger.exception("analyzer_worker_error", worker_id=worker_id)
 
             if all_anomalies:
                 for event in all_anomalies:
                     ANOMALIES_TOTAL.labels(
-                        **labels, type=event.analyzer,
+                        **labels,
+                        type=event.analyzer,
                     ).inc()
                 await self._grpc_client.submit(all_anomalies)
 
@@ -274,22 +273,14 @@ class InferenceMonitor:
 
         # Logit analyzer
         t0 = time.monotonic()
-        result = await loop.run_in_executor(
-            None, self._logit_analyzer.analyze, capture.tensor
-        )
-        ANALYSIS_DURATION.labels(**labels, analyzer="logit").observe(
-            time.monotonic() - t0
-        )
+        result = await loop.run_in_executor(None, self._logit_analyzer.analyze, capture.tensor)
+        ANALYSIS_DURATION.labels(**labels, analyzer="logit").observe(time.monotonic() - t0)
         anomalies.extend(result)
 
         # Entropy analyzer
         t0 = time.monotonic()
-        result = await loop.run_in_executor(
-            None, self._entropy_analyzer.analyze, capture.tensor
-        )
-        ANALYSIS_DURATION.labels(**labels, analyzer="entropy").observe(
-            time.monotonic() - t0
-        )
+        result = await loop.run_in_executor(None, self._entropy_analyzer.analyze, capture.tensor)
+        ANALYSIS_DURATION.labels(**labels, analyzer="entropy").observe(time.monotonic() - t0)
         anomalies.extend(result)
 
         # KL divergence (cross-replica)
@@ -302,35 +293,25 @@ class InferenceMonitor:
             capture.request_id,
             None,
         )
-        ANALYSIS_DURATION.labels(**labels, analyzer="kl_divergence").observe(
-            time.monotonic() - t0
-        )
+        ANALYSIS_DURATION.labels(**labels, analyzer="kl_divergence").observe(time.monotonic() - t0)
         anomalies.extend(result)
 
         # Spectral analyzer
         t0 = time.monotonic()
-        result = await loop.run_in_executor(
-            None, self._spectral_analyzer.analyze, capture.tensor
-        )
-        ANALYSIS_DURATION.labels(**labels, analyzer="spectral").observe(
-            time.monotonic() - t0
-        )
+        result = await loop.run_in_executor(None, self._spectral_analyzer.analyze, capture.tensor)
+        ANALYSIS_DURATION.labels(**labels, analyzer="spectral").observe(time.monotonic() - t0)
         anomalies.extend(result)
 
         # Statistical tests
         t0 = time.monotonic()
-        result = await loop.run_in_executor(
-            None, self._stat_tests.analyze, capture.tensor
-        )
+        result = await loop.run_in_executor(None, self._stat_tests.analyze, capture.tensor)
         ANALYSIS_DURATION.labels(**labels, analyzer="statistical_tests").observe(
             time.monotonic() - t0
         )
         anomalies.extend(result)
 
         # Tensor fingerprint (for logging / future use)
-        _fp = await loop.run_in_executor(
-            None, self._fingerprinter.compute, capture.tensor
-        )
+        _fp = await loop.run_in_executor(None, self._fingerprinter.compute, capture.tensor)
 
         # Update token sketches if tensor looks like token IDs
         if capture.tensor.ndim >= 1:
@@ -408,6 +389,7 @@ def main() -> None:
     if sys.platform != "win32":
         try:
             import uvloop
+
             asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
             logger.info("using_uvloop")
         except ImportError:

@@ -129,14 +129,14 @@ class GrpcAnomalyClient:
         """Establish gRPC channel with optional mTLS."""
         try:
             if self._config.mtls_enabled:
-                if not all([
-                    self._config.cert_path,
-                    self._config.key_path,
-                    self._config.ca_path,
-                ]):
-                    raise ValueError(
-                        "mTLS enabled but cert_path, key_path, or ca_path not set"
-                    )
+                if not all(
+                    [
+                        self._config.cert_path,
+                        self._config.key_path,
+                        self._config.ca_path,
+                    ]
+                ):
+                    raise ValueError("mTLS enabled but cert_path, key_path, or ca_path not set")
                 with open(self._config.cert_path, "rb") as f:  # type: ignore[arg-type]
                     cert = f.read()
                 with open(self._config.key_path, "rb") as f:  # type: ignore[arg-type]
@@ -148,9 +148,7 @@ class GrpcAnomalyClient:
                     private_key=key,
                     certificate_chain=cert,
                 )
-                self._channel = grpc.secure_channel(
-                    self._config.endpoint, credentials
-                )
+                self._channel = grpc.secure_channel(self._config.endpoint, credentials)
             else:
                 self._channel = grpc.insecure_channel(self._config.endpoint)
 
@@ -173,9 +171,7 @@ class GrpcAnomalyClient:
         """Reconnect with exponential backoff."""
         self._disconnect()
         time.sleep(self._backoff_seconds)
-        self._backoff_seconds = min(
-            self._backoff_seconds * 2, self._max_backoff
-        )
+        self._backoff_seconds = min(self._backoff_seconds * 2, self._max_backoff)
         self._connect()
 
     def _flush_loop(self) -> None:

@@ -162,9 +162,7 @@ class KLDivergenceDetector:
 
                 if divergence > self._config.threshold_nats:
                     severity = (
-                        "critical"
-                        if divergence > self._config.threshold_nats * 10
-                        else "warning"
+                        "critical" if divergence > self._config.threshold_nats * 10 else "warning"
                     )
                     anomalies.append(
                         AnomalyEvent(

@@ -65,9 +65,7 @@ class TestJensenShannonDivergence:
     def test_symmetric(self) -> None:
         p = np.array([0.9, 0.1])
         q = np.array([0.1, 0.9])
-        assert abs(
-            jensen_shannon_divergence(p, q) - jensen_shannon_divergence(q, p)
-        ) < 1e-10
+        assert abs(jensen_shannon_divergence(p, q) - jensen_shannon_divergence(q, p)) < 1e-10
 
     def test_bounded(self) -> None:
         """JSD should be in [0, ln(2)]."""
@@ -96,15 +94,11 @@ class TestKLDivergenceDetector:
         input_hash = "test_hash_1"
 
         # Submit from replica A
-        events_a = detector.submit(
-            logits, input_hash, "req1", replica_id="replica_a"
-        )
+        events_a = detector.submit(logits, input_hash, "req1", replica_id="replica_a")
         assert len(events_a) == 0
 
         # Submit same logits from replica B
-        events_b = detector.submit(
-            logits, input_hash, "req2", replica_id="replica_b"
-        )
+        events_b = detector.submit(logits, input_hash, "req2", replica_id="replica_b")
         assert len(events_b) == 0
 
     def test_detects_divergent_outputs(self) -> None:
@@ -118,9 +112,7 @@ class TestKLDivergenceDetector:
         input_hash = "test_hash_2"
 
         detector.submit(logits_a, input_hash, "req1", replica_id="replica_a")
-        events = detector.submit(
-            logits_b, input_hash, "req2", replica_id="replica_b"
-        )
+        events = detector.submit(logits_b, input_hash, "req2", replica_id="replica_b")
         assert len(events) > 0
         assert events[0].analyzer == "kl_divergence"
 
@@ -135,9 +127,7 @@ class TestKLDivergenceDetector:
         input_hash = "test_hash_3"
 
         detector.submit(logits_a, input_hash, "req1", replica_id="replica_a")
-        events = detector.submit(
-            logits_b, input_hash, "req2", replica_id="replica_a"
-        )
+        events = detector.submit(logits_b, input_hash, "req2", replica_id="replica_a")
         assert len(events) == 0
 
     def test_different_input_hash_not_matched(self) -> None:

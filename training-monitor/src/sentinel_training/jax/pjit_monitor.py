@@ -218,9 +218,7 @@ class PjitMonitor:
         return result
 
     @staticmethod
-    def _flatten_with_paths(
-        pytree: Any, prefix: str = ""
-    ) -> list[tuple[str, Any]]:
+    def _flatten_with_paths(pytree: Any, prefix: str = "") -> list[tuple[str, Any]]:
         """Flatten a pytree with string paths."""
         result: list[tuple[str, Any]] = []
 

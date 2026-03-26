@@ -220,9 +220,7 @@ class AnomalyDetector:
         """
         return self.composite_score() > self._composite_threshold
 
-    def recent_anomalies(
-        self, anomaly_type: AnomalyType | None = None
-    ) -> list[AnomalyScore]:
+    def recent_anomalies(self, anomaly_type: AnomalyType | None = None) -> list[AnomalyScore]:
         """Return recent anomalies, optionally filtered by type.
 
         Args:

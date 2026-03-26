@@ -157,17 +157,13 @@ class SentinelTrainingHook:
         if self._config.gradient_norm.enabled:
             # Register backward hooks on all modules to capture gradients
             for name, module in self._model.named_modules():
-                handle = module.register_full_backward_hook(
-                    self._make_backward_hook(name)
-                )
+                handle = module.register_full_backward_hook(self._make_backward_hook(name))
                 self._hook_handles.append(handle)
 
         self._registered = True
         logger.debug("hooks_registered", hook_count=len(self._hook_handles))
 
-    def _make_backward_hook(
-        self, module_name: str
-    ) -> Callable[..., None]:
+    def _make_backward_hook(self, module_name: str) -> Callable[..., None]:
         """Create a backward hook closure for a specific module.
 
         Args:
@@ -186,9 +182,7 @@ class SentinelTrainingHook:
             for i, g in enumerate(grad_output):
                 if g is not None and isinstance(g, torch.Tensor):
                     layer_name = (
-                        f"{module_name}.grad_output.{i}"
-                        if module_name
-                        else f"grad_output.{i}"
+                        f"{module_name}.grad_output.{i}" if module_name else f"grad_output.{i}"
                     )
                     gradient_monitor.on_gradient(layer_name, g)
 
@@ -261,9 +255,7 @@ class SentinelTrainingHook:
         overhead = time.perf_counter() - start
         self._metrics.record_overhead(overhead)
 
-    def on_checkpoint(
-        self, state_dict: dict[str, Any], step: int
-    ) -> AnomalyScore | None:
+    def on_checkpoint(self, state_dict: dict[str, Any], step: int) -> AnomalyScore | None:
         """Called after a checkpoint is saved.
 
         Args:

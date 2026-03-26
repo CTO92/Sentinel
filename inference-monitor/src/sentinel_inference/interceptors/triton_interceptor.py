@@ -125,12 +125,16 @@ class TritonInterceptor(BaseInterceptor):
         for s in shape:
             num_elements *= s
 
-        tensor = np.frombuffer(
-            buf,
-            dtype=np.float32,
-            count=num_elements,
-            offset=offset,
-        ).reshape(shape).copy()
+        tensor = (
+            np.frombuffer(
+                buf,
+                dtype=np.float32,
+                count=num_elements,
+                offset=offset,
+            )
+            .reshape(shape)
+            .copy()
+        )
 
         # Clear ready flag
         struct.pack_into("<I", buf, 4, flags & ~1)

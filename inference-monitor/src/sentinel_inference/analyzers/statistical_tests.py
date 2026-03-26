@@ -44,9 +44,7 @@ class StatisticalTestAnalyzer:
     def _rebuild_baseline(self) -> None:
         """Concatenate baseline samples into a single array for testing."""
         if self._baseline:
-            self._baseline_flat = np.concatenate(
-                [s.ravel() for s in self._baseline]
-            )
+            self._baseline_flat = np.concatenate([s.ravel() for s in self._baseline])
         else:
             self._baseline_flat = None
         self._needs_rebuild = False

@@ -159,9 +159,7 @@ class RecomputationEngine:
             if self._approval_callback is not None:
                 approved = self._approval_callback(suspect_rank)
                 if not approved:
-                    logger.info(
-                        "recomputation_not_approved", suspect_rank=suspect_rank
-                    )
+                    logger.info("recomputation_not_approved", suspect_rank=suspect_rank)
                     return RecomputationResult(
                         status=RecomputationStatus.AWAITING_APPROVAL,
                         suspect_rank=suspect_rank,
@@ -233,9 +231,7 @@ class RecomputationEngine:
         Loads checkpoint, replays steps, compares states.
         """
         if self._checkpoint_loader is None or self._step_replayer is None:
-            raise RuntimeError(
-                "checkpoint_loader and step_replayer must be set for verification"
-            )
+            raise RuntimeError("checkpoint_loader and step_replayer must be set for verification")
 
         logger.info(
             "recomputation_start",
@@ -281,9 +277,7 @@ class RecomputationEngine:
                 device=target_device,
             )
             replay_model_state = new_state.get("model_state", replay_model_state)
-            replay_optimizer_state = new_state.get(
-                "optimizer_state", replay_optimizer_state
-            )
+            replay_optimizer_state = new_state.get("optimizer_state", replay_optimizer_state)
 
         # Compute divergence between suspect state and replayed state
         if model_state is not None:

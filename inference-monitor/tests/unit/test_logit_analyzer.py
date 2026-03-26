@@ -136,9 +136,7 @@ class TestLogitAnalyzer:
     """Integration tests for the full LogitAnalyzer."""
 
     def test_no_anomalies_during_burn_in(self) -> None:
-        config = LogitAnalyzerConfig(
-            ewma=EWMAConfig(**{"lambda": 0.1, "L": 3.5, "burn_in": 100})
-        )
+        config = LogitAnalyzerConfig(ewma=EWMAConfig(**{"lambda": 0.1, "L": 3.5, "burn_in": 100}))
         analyzer = LogitAnalyzer(config)
         rng = np.random.default_rng(42)
         for _ in range(99):
@@ -148,9 +146,7 @@ class TestLogitAnalyzer:
 
     def test_detects_corruption(self) -> None:
         """Analyzer should detect a sudden distributional shift."""
-        config = LogitAnalyzerConfig(
-            ewma=EWMAConfig(**{"lambda": 0.1, "L": 3.0, "burn_in": 50})
-        )
+        config = LogitAnalyzerConfig(ewma=EWMAConfig(**{"lambda": 0.1, "L": 3.0, "burn_in": 50}))
         analyzer = LogitAnalyzer(config)
         rng = np.random.default_rng(42)
 
@@ -176,9 +172,7 @@ class TestLogitAnalyzer:
         assert analyzer.analyze(logits) == []
 
     def test_anomaly_event_fields(self) -> None:
-        config = LogitAnalyzerConfig(
-            ewma=EWMAConfig(**{"lambda": 0.3, "L": 2.0, "burn_in": 20})
-        )
+        config = LogitAnalyzerConfig(ewma=EWMAConfig(**{"lambda": 0.3, "L": 2.0, "burn_in": 20}))
         analyzer = LogitAnalyzer(config)
         rng = np.random.default_rng(0)
 
@@ -187,9 +181,7 @@ class TestLogitAnalyzer:
 
         # Inject anomaly
         for _ in range(50):
-            anomalies = analyzer.analyze(
-                rng.normal(20.0, 1.0, size=500).astype(np.float32)
-            )
+            anomalies = analyzer.analyze(rng.normal(20.0, 1.0, size=500).astype(np.float32))
             if anomalies:
                 event = anomalies[0]
                 assert event.analyzer == "logit_analyzer"

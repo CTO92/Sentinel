@@ -67,7 +67,10 @@ class EWMATracker:
     )
 
     def __init__(
-        self, lambda_: float = 0.1, control_limit: float = 3.5, burn_in: int = 1000,
+        self,
+        lambda_: float = 0.1,
+        control_limit: float = 3.5,
+        burn_in: int = 1000,
     ) -> None:
         self._lambda = lambda_
         self._L = control_limit
@@ -129,7 +132,7 @@ class EWMATracker:
 
         # Welford-style running mean and variance for target & sigma
         self._target = self._sum / self._count
-        variance = (self._sum_sq / self._count) - (self._target ** 2)
+        variance = (self._sum_sq / self._count) - (self._target**2)
         self._sigma = np.sqrt(max(variance, 1e-15))
 
         # EWMA update

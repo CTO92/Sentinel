@@ -130,9 +130,7 @@ class JAXGradientMonitor:
         return anomalies
 
     @staticmethod
-    def _flatten_with_paths(
-        pytree: Any, prefix: str = ""
-    ) -> list[tuple[str, Any]]:
+    def _flatten_with_paths(pytree: Any, prefix: str = "") -> list[tuple[str, Any]]:
         """Flatten a pytree and generate string paths for each leaf.
 
         Args:

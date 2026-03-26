@@ -96,9 +96,7 @@ def _telemetry_callback(
 
         if tracker.is_warmed_up and z > state.config.sigma_multiplier:
             anomaly_type = (
-                AnomalyType.GRADIENT_SPIKE
-                if norm > tracker.mean
-                else AnomalyType.GRADIENT_COLLAPSE
+                AnomalyType.GRADIENT_SPIKE if norm > tracker.mean else AnomalyType.GRADIENT_COLLAPSE
             )
             anomaly = AnomalyScore(
                 anomaly_type=anomaly_type,
@@ -121,9 +119,7 @@ def _telemetry_callback(
             )
 
 
-def _compute_pytree_norms(
-    pytree: Any, prefix: str = ""
-) -> dict[str, float]:
+def _compute_pytree_norms(pytree: Any, prefix: str = "") -> dict[str, float]:
     """Compute L2 norms for all leaf arrays in a pytree.
 
     Args:
@@ -203,7 +199,9 @@ def sentinel_monitor(
     if fn is None:
         # Called with arguments: @sentinel_monitor(config=..., name=...)
         return functools.partial(  # type: ignore[return-value]
-            sentinel_monitor, config=config, name=name,
+            sentinel_monitor,
+            config=config,
+            name=name,
         )
 
     if jax is None:
@@ -280,7 +278,4 @@ def get_gradient_norms() -> dict[str, float]:
     """
     if _global_state is None:
         return {}
-    return {
-        name: tracker.mean
-        for name, tracker in _global_state.trackers.items()
-    }
+    return {name: tracker.mean for name, tracker in _global_state.trackers.items()}

@@ -37,14 +37,14 @@ logger = structlog.get_logger(__name__)
 
 # Anomaly type mapping from analyzer names to proto enum values.
 _ANOMALY_TYPE_MAP: dict[str, int] = {
-    "logit_analyzer": 1,        # ANOMALY_TYPE_LOGIT_DRIFT
-    "entropy_analyzer": 2,      # ANOMALY_TYPE_ENTROPY_ANOMALY
-    "kl_divergence": 3,         # ANOMALY_TYPE_KL_DIVERGENCE
-    "gradient_monitor": 4,      # ANOMALY_TYPE_GRADIENT_NORM_SPIKE
-    "loss_monitor": 5,          # ANOMALY_TYPE_LOSS_SPIKE
-    "ddp_divergence": 6,        # ANOMALY_TYPE_CROSS_RANK_DIVERGENCE
+    "logit_analyzer": 1,  # ANOMALY_TYPE_LOGIT_DRIFT
+    "entropy_analyzer": 2,  # ANOMALY_TYPE_ENTROPY_ANOMALY
+    "kl_divergence": 3,  # ANOMALY_TYPE_KL_DIVERGENCE
+    "gradient_monitor": 4,  # ANOMALY_TYPE_GRADIENT_NORM_SPIKE
+    "loss_monitor": 5,  # ANOMALY_TYPE_LOSS_SPIKE
+    "ddp_divergence": 6,  # ANOMALY_TYPE_CROSS_RANK_DIVERGENCE
     "checkpoint_validator": 7,  # ANOMALY_TYPE_CHECKPOINT_DIVERGENCE
-    "invariant_checker": 8,     # ANOMALY_TYPE_INVARIANT_VIOLATION
+    "invariant_checker": 8,  # ANOMALY_TYPE_INVARIANT_VIOLATION
 }
 
 # Severity mapping from string labels to proto enum values.
@@ -174,8 +174,11 @@ class CorrelationEngineClient:
 
             # Try to import the generated protobuf stubs.
             self._stub = self._create_stub()
-            logger.info("grpc_client_started", endpoint=self._config.endpoint,
-                        proto_stubs=self._proto_available)
+            logger.info(
+                "grpc_client_started",
+                endpoint=self._config.endpoint,
+                proto_stubs=self._proto_available,
+            )
         except ImportError:
             logger.warning("grpc_not_available", msg="Running without gRPC reporting.")
             self._channel = None
@@ -187,13 +190,15 @@ class CorrelationEngineClient:
         """Create the AnomalyService stub, trying generated stubs first."""
         try:
             from sentinel.v1 import anomaly_pb2_grpc  # type: ignore[import-untyped]
+
             stub = anomaly_pb2_grpc.AnomalyServiceStub(self._channel)
             self._proto_available = True
             logger.debug("using_generated_proto_stubs")
             return stub
         except ImportError:
-            logger.debug("generated_proto_stubs_not_found",
-                         msg="Falling back to manual serialization")
+            logger.debug(
+                "generated_proto_stubs_not_found", msg="Falling back to manual serialization"
+            )
             self._proto_available = False
             return None
 
@@ -217,8 +222,7 @@ class CorrelationEngineClient:
             self._stream = None
         if self._channel is not None:
             await self._channel.close()
-        logger.info("grpc_client_stopped",
-                     pending_acks=len(self._pending_acks))
+        logger.info("grpc_client_stopped", pending_acks=len(self._pending_acks))
 
     # ------------------------------------------------------------------
     # Event submission
@@ -283,9 +287,7 @@ class CorrelationEngineClient:
         else:
             severity_val = _SEVERITY_MAP.get(str(severity_str).lower(), 2)
 
-        anomaly_type_val = _ANOMALY_TYPE_MAP.get(
-            getattr(event, "analyzer", ""), 0
-        )
+        anomaly_type_val = _ANOMALY_TYPE_MAP.get(getattr(event, "analyzer", ""), 0)
 
         # Generate a deterministic event ID from content hash.
         content = f"{event.analyzer}:{event.stat_name}:{event.sample_count}:{event.observed_value}"
@@ -307,9 +309,7 @@ class CorrelationEngineClient:
                 f"{event.analyzer}/{event.stat_name}: observed={event.observed_value:.6f}, "
                 f"ewma={event.ewma_value:.6f}, ucl={event.ucl}, lcl={event.lcl}"
             ),
-            "tensor_fingerprint": hashlib.sha256(
-                f"{event.observed_value}".encode()
-            ).digest()[:16],
+            "tensor_fingerprint": hashlib.sha256(f"{event.observed_value}".encode()).digest()[:16],
             "timestamp": time.time(),
             "metadata": event.details if isinstance(event.details, dict) else {},
             "step_number": event.sample_count,
@@ -428,9 +428,7 @@ class CorrelationEngineClient:
         if self._stream is None:
             self._stream = self._stub.StreamAnomalyEvents()
             # Start background ack reader.
-            self._ack_task = asyncio.create_task(
-                self._read_acks_proto()
-            )
+            self._ack_task = asyncio.create_task(self._read_acks_proto())
 
         self._pending_acks[report.sequence_number] = time.time()
         await self._stream.write(batch)
@@ -470,13 +468,15 @@ class CorrelationEngineClient:
         """
         import json
 
-
-        payload = json.dumps({
-            "source_hostname": report.source_hostname,
-            "sequence_number": report.sequence_number,
-            "batch_timestamp": {"seconds": int(report.timestamp)},
-            "events": report.events,
-        }, default=str).encode("utf-8")
+        payload = json.dumps(
+            {
+                "source_hostname": report.source_hostname,
+                "sequence_number": report.sequence_number,
+                "batch_timestamp": {"seconds": int(report.timestamp)},
+                "events": report.events,
+            },
+            default=str,
+        ).encode("utf-8")
 
         call = self._channel.unary_unary(
             "/sentinel.v1.AnomalyService/StreamAnomalyEvents",
