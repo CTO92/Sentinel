@@ -69,11 +69,11 @@ class EWMATracker:
     def __init__(
         self,
         lambda_: float = 0.1,
-        control_limit: float = 3.5,
+        L: float = 3.5,  # noqa: N803 — standard EWMA control-limit name
         burn_in: int = 1000,
     ) -> None:
         self._lambda = lambda_
-        self._L = control_limit
+        self._L = L
         self._burn_in = burn_in
         self._count: int = 0
         self._ewma: float = 0.0
