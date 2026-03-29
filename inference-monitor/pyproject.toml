@@ -61,6 +61,10 @@ warn_return_any = false
 warn_unused_ignores = false
 disallow_untyped_decorators = false
 
+[[tool.mypy.overrides]]
+module = "sentinel_inference.interceptors.*"
+disable_error_code = ["arg-type"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

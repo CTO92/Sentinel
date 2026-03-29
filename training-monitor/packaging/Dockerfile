@@ -35,8 +35,8 @@ RUN groupadd -r sentinel && useradd -r -g sentinel -m -d /home/sentinel sentinel
 COPY --from=builder /dist/*.whl /tmp/
 RUN pip install --no-cache-dir /tmp/*.whl && rm -f /tmp/*.whl
 
-# Copy configuration defaults
-COPY config/ /etc/sentinel/ 2>/dev/null || true
+# Configuration is mounted at runtime via volumes or ConfigMaps.
+RUN mkdir -p /etc/sentinel
 
 USER sentinel
 WORKDIR /home/sentinel
