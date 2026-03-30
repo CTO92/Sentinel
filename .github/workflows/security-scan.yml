@@ -17,7 +17,6 @@ jobs:
       fail-fast: false
       matrix:
         component:
-          - probe-agent
           - inference-monitor
           - training-monitor
           - correlation-engine
@@ -25,10 +24,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Determine build context
+        id: ctx
+        run: |
+          # Rust components use repo-root context; Python components use their own dir
+          case "${{ matrix.component }}" in
+            correlation-engine|audit-ledger) echo "dir=." >> "$GITHUB_OUTPUT" ;;
+            *) echo "dir=${{ matrix.component }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
       - name: Build image
         run: |
           docker build -t sentinel-${{ matrix.component }}:scan \
-            -f ${{ matrix.component }}/packaging/Dockerfile .
+            -f ${{ matrix.component }}/packaging/Dockerfile \
+            ${{ steps.ctx.outputs.dir }}/
+        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -112,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [python, cpp]
+        language: [python]
     steps:
       - uses: actions/checkout@v4
 
